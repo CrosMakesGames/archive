@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The CrosMakesGames Archive</title>
+
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="icon" href="favicon.ico" sizes="any">
+    <link rel="shortcut icon" type="image/x-icon" href="favicon.ico">
+
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=JetBrains+Mono:wght@400;500;700;800&display=swap" rel="stylesheet">
+
+    <style>        body, p, a, span, li, button {
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        h1, h2, h3 {
+            font-family: 'JetBrains Mono', monospace;
+            font-weight: 800;
+            line-height: 1.4;
+        }
+
+        .pixel-font {
+            font-family: 'Press Start 2P', cursive;
+        }
+
+        html { scroll-behavior: smooth; }
+
+                .navbar {
+            position: sticky;
+            top: 0;
+            z-index: 50;
+            background: #FDFBF7;
+            border-bottom: 4px solid #000;
+        }
+
+        .nav-link {
+            font-family: 'Press Start 2P', cursive;
+            font-size: 10px;
+            padding: 10px 14px;
+            border: 2px solid transparent;
+            color: #000;
+            text-decoration: none;
+            transition: all 0.15s;
+            white-space: nowrap;
+        }
+
+        .nav-link:hover {
+            background: #FFD166;
+            border: 2px solid #000;
+            box-shadow: 2px 2px 0px 0px rgba(0,0,0,1);
+        }
+
+        .nav-link.active {
+            background: #000;
+            color: #FDFBF7;
+        }
+
+                .section-divider {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            margin: 32px 0 24px;
+        }
+
+        .section-divider .line {
+            flex: 1;
+            height: 3px;
+            background: #000;
+            border-radius: 2px;
+        }
+
+        .section-divider .dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #000;
+        }
+
+                .timeline-start-cap {
+            width: 18px;
+            height: 18px;
+            border: 3px solid #000;
+            background: var(--cap-color, #FFD166);
+            box-shadow: 3px 3px 0px 0px rgba(0,0,0,1);
+            margin: 28px auto 0;
+            position: relative;
+            z-index: 2;
+        }
+
+                .timeline {
+            position: relative;
+            max-width: 1080px;
+            padding: 36px 0 0;
+        }
+
+                .timeline::before {
+            content: '';
+            position: absolute;
+            left: 50%;
+            top: 0;
+            bottom: 0;
+            width: 4px;
+            background: #000;
+            border-radius: 2px;
+            transform: translateX(-50%);
+        }
+
+        .timeline-item {
+            position: relative;
+            display: flex;
+            align-items: flex-start;
+            margin-bottom: 52px;
+        }
+
+        .timeline-item:last-child {
+            margin-bottom: 0;
+        }
+
+                .timeline-dot {
+            position: absolute;
+            left: 50%;
+            top: 2px;
+            width: 26px;
+            height: 26px;
+            transform: translateX(-50%);
+            border: 3px solid #000;
+            background: var(--dot-color, #FFD166);
+            box-shadow: 3px 3px 0px 0px rgba(0,0,0,1);
+            z-index: 2;
+        }
+
+                .timeline-half {
+            width: 50%;
+            box-sizing: border-box;
+            padding: 0 34px;
+        }
+
+        .timeline-half.half-content {
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-start;
+        }
+
+        .timeline-half.half-image {
+            display: flex;
+            align-items: flex-start;
+            justify-content: center;
+        }
+
+                .timeline-item.side-left .half-content { order: 1; }
+        .timeline-item.side-left .half-image  { order: 2; }
+        .timeline-item.side-right .half-image { order: 1; }
+        .timeline-item.side-right .half-content { order: 2; }
+
+                .timeline-item.side-left .half-content  { text-align: right; align-items: flex-end; }
+        .timeline-item.side-right .half-content { text-align: left; align-items: flex-start; }
+
+        .timeline-date {
+            font-family: 'Press Start 2P', cursive;
+            font-size: 10px;
+            color: #666;
+            margin-bottom: 10px;
+            letter-spacing: 0.5px;
+        }
+
+        .timeline-title {
+            font-weight: 800;
+            font-size: 18px;
+            color: #000;
+            margin-bottom: 8px;
+        }
+
+        .timeline-desc {
+            font-size: 14px;
+            color: #444;
+            line-height: 1.7;
+        }
+
+                .timeline-img-frame {
+            border: 3px solid #000;
+            background: #fff;
+            box-shadow: 5px 5px 0px 0px rgba(0,0,0,1);
+            padding: 6px;
+            width: 320px;
+            max-width: 100%;
+            flex-shrink: 0;
+            box-sizing: border-box;
+        }
+
+        .timeline-img-frame img {
+            display: block;
+            width: 100%;
+            aspect-ratio: 16 / 9;
+            object-fit: cover;
+            border: 2px solid #000;
+        }
+
+                .snapshot-link {
+            display: inline-block;
+            margin-top: 10px;
+            font-size: 13px;
+            font-weight: 700;
+            color: #1D61E8;
+            text-decoration: underline;
+            text-underline-offset: 3px;
+            transition: all 0.15s;
+        }
+
+        .snapshot-link:hover {
+            color: #0B3FA8;
+            text-decoration-thickness: 2px;
+        }
+
+                .timeline-end-cap {
+            width: 18px;
+            height: 18px;
+            border: 3px solid #000;
+            background: #000;
+            margin: 28px auto 0;
+            position: relative;
+            z-index: 2;
+        }
+
+        .whats-next {
+            max-width: 560px;
+            margin: 40px auto 0;
+            padding: 24px;
+            text-align: center;
+            border: 3px solid #000;
+            background: #fff;
+            box-shadow: 6px 6px 0px 0px rgba(0,0,0,1);
+        }
+
+        .whats-next .wn-title {
+            font-family: 'Press Start 2P', cursive;
+            font-size: 14px;
+            color: #000;
+            margin-bottom: 12px;
+        }
+
+        .whats-next p {
+            font-size: 14px;
+            color: #444;
+            line-height: 1.7;
+        }
+
+                @media (max-width: 768px) {
+            .timeline::before {
+                left: 11px;
+                transform: none;
+            }
+
+                        .timeline-start-cap,
+            .timeline-end-cap {
+                margin-left: 1px;
+                margin-right: auto;
+            }
+
+            .timeline-item {
+                flex-direction: column;
+                padding-left: 44px;
+            }
+
+            .timeline-dot {
+                left: 0;
+                transform: none;
+            }
+
+            .timeline-half {
+                width: 100%;
+                padding: 0;
+            }
+
+            .timeline-half.half-image {
+                margin-top: 14px;
+                justify-content: flex-start;
+            }
+
+                        .timeline-item.side-left .half-content,
+            .timeline-item.side-right .half-content { order: 1; }
+            .timeline-item.side-left .half-image,
+            .timeline-item.side-right .half-image  { order: 2; }
+
+            .timeline-item.side-left .half-content,
+            .timeline-item.side-right .half-content {
+                text-align: left;
+                align-items: flex-start;
+            }
+
+            .timeline-title { font-size: 16px; }
+            .section-divider { margin: 24px 0 18px; gap: 10px; }
+            .nav-link { font-size: 8px; padding: 8px 8px; }
+            .timeline-img-frame { box-shadow: 3px 3px 0px 0px rgba(0,0,0,1); width: min(320px, 100%); }
+            .whats-next { box-shadow: 4px 4px 0px 0px rgba(0,0,0,1); }
+        }
+    </style>
+</head>
+
+<body class="bg-[#FDFBF7] text-gray-900 min-h-screen">
+
+<nav class="navbar">
+    <div class="max-w-5xl mx-auto flex items-center gap-3 sm:gap-5 px-4 sm:px-6 py-3">
+        <a href="https://crosmakesgames.com/" class="flex items-center gap-3 sm:gap-4 flex-shrink-0" title="crosmakesgames.com">
+            <img src="logo.png" alt="CrosMakesGames Logo" class="w-14 sm:w-16 object-contain">
+            <span class="pixel-font text-[10px] sm:text-xs text-black leading-snug">The CrosMakesGames Archive</span>
+        </a>
+        <div class="ml-auto flex items-center gap-1 sm:gap-2">
+            <a class="nav-link active" href="#timeline-start">Timeline</a>
+            <a class="nav-link" href="snapshots.html">Snapshots</a>
+            <a class="nav-link" href="#" id="random-link">Random</a>
+        </div>
+    </div>
+</nav>
+
+<div id="timeline-start" class="max-w-5xl mx-auto px-4 sm:px-6 pt-4" style="scroll-margin-top: 90px;"></div>
+
+<div class="max-w-5xl mx-auto px-4 sm:px-6 py-8 sm:py-12">
+
+    <header class="max-w-3xl">
+        <div class="section-divider mb-6">
+            <span class="dot"></span>
+            <h1 class="text-base sm:text-lg text-black whitespace-nowrap">the timeline</h1>
+            <span class="line"></span>
+        </div>
+        <p class="text-gray-800 text-sm leading-relaxed">
+            This is the archive of everything I've made - games, sites, tools, experiments.
+            Every entry below is a point in the history of CrosMakesGames, oldest first.
+            When a project version gets preserved, it gets a blue <b>View snapshot</b> link
+            that takes you to that exact version of it. Head to
+            <a href="snapshots.html" class="text-[#1D61E8] font-bold underline text-underline-offset-2">Snapshots</a>
+            to browse every snapshot I have.
+        </p>
+    </header>
+
+    <div class="section-divider" id="timeline-heading">
+        <span class="dot"></span>
+        <h2 class="text-sm sm:text-base text-black whitespace-nowrap">history</h2>
+        <span class="line"></span>
+    </div>
+
+    <div id="timeline-container" class="timeline"></div>
+    <div id="whatsnext-container"></div>
+
+    <footer class="pt-8 mt-12 border-t-4 border-black text-center text-black font-medium">
+        The CrosMakesGames Archive - part of <a href="https://crosmakesgames.com/" class="font-bold underline text-underline-offset-2">crosmakesgames.com</a>.
+        <p>&copy; 2026 CrosMakesGames.</p>
+    </footer>
+
+</div>
+
+<script src="timeline-data.js"></script>
+<script src="snapshots-data.js"></script>
+
+<script>function snapshotLinkHtml(item) {
+    if (item.snapshot && item.snapshotFolder) {
+        const url = 'snapshots/' + encodeURIComponent(item.snapshotFolder) + '/index.html';
+        return `<a class="snapshot-link" href="${url}">View snapshot &rarr;</a>`;
+    }
+    return '';
+}
+
+const container = document.getElementById('timeline-container');
+
+if (timelineItems.length > 0) {
+    container.insertAdjacentHTML('beforeend',
+        `<div class="timeline-start-cap" style="--cap-color: ${timelineItems[0].color || '#FFD166'};"></div>`);
+}
+
+let flip = 0;
+
+timelineItems.forEach((item) => {
+    const entry = document.createElement('div');
+    entry.className = 'timeline-item ' + (flip % 2 === 0 ? 'side-left' : 'side-right');
+    flip++;
+    entry.style.setProperty('--dot-color', item.color || '#FFD166');
+
+            let imageInner = '';
+    if (item.image) {
+        const imgUrl = 'timeline-assets/' + encodeURIComponent(item.image);
+        imageInner = `
+            <div class="timeline-img-frame">
+                <img src="${imgUrl}" alt="${item.title}" loading="lazy" onerror="this.parentElement.style.display='none'">
+            </div>`;
+    }
+
+    entry.innerHTML = `
+        <div class="timeline-dot"></div>
+        <div class="timeline-half half-content">
+            <div class="timeline-date">${item.date}</div>
+            <h3 class="timeline-title">${item.title}</h3>
+            <p class="timeline-desc">${item.description}</p>
+            ${snapshotLinkHtml(item)}
+        </div>
+        <div class="timeline-half half-image">${imageInner}</div>
+    `;
+
+    container.appendChild(entry);
+});
+
+if (typeof whatsNext !== 'undefined' && whatsNext) {
+    document.getElementById('whatsnext-container').innerHTML = `
+        <div class="timeline-end-cap"></div>
+        <div class="whats-next">
+            <div class="wn-title">The Next Era</div>
+            <p>${whatsNext.description}</p>
+        </div>
+    `;
+}
+
+const randomLink = document.getElementById('random-link');
+
+randomLink.addEventListener('click', (e) => {
+    e.preventDefault();
+    const withPages = snapshotProjects.filter(p =>
+        p.snapshots.some(s => s.page !== false));
+    if (withPages.length === 0) {
+        window.location.href = 'snapshots.html';
+        return;
+    }
+    const project = withPages[Math.floor(Math.random() * withPages.length)];
+    const pool = project.snapshots.filter(s => s.page !== false);
+    const snap = pool[Math.floor(Math.random() * pool.length)];
+    window.location.href = 'snapshots/' + encodeURIComponent(snap.folder) + '/index.html';
+});
+</script>
+
+</body>
+</html>

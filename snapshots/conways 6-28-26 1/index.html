@@ -1,0 +1,1072 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Conway's Game of Life</title>
+
+<style>
+    body {
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        background: #111;
+        color: white;
+        text-align: center;
+        margin: 0;
+        user-select: none; /* Prevent text selection while drawing */
+    }
+
+    #controls {
+        padding: 15px;
+        position: sticky;
+        top: 0;
+        background: #222;
+        z-index: 10;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.5);
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 10px;
+        align-items: center;
+    }
+
+    .control-group {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        background: #333;
+        padding: 5px 10px;
+        border-radius: 6px;
+    }
+
+    button, select, input[type="text"], input[type="number"] {
+        margin: 2px;
+        padding: 5px 10px;
+        background: #444;
+        color: white;
+        border: 1px solid #555;
+        border-radius: 4px;
+        cursor: pointer;
+        outline: none;
+    }
+
+    button:hover, select:hover {
+        background: #555;
+    }
+    
+    button:active {
+        background: #666;
+    }
+
+    #grid {
+        display: grid;
+        justify-content: center;
+        gap: 1px;
+        padding: 20px;
+        /* Dynamic columns set via JS */
+    }
+
+    .cell {
+        width: 10px;
+        height: 10px;
+        background: #222;
+        cursor: crosshair;
+    }
+
+    .cell.alive {
+        background: #00ff66;
+        box-shadow: 0 0 4px #00ff66;
+    }
+
+    .modal {
+        display: none;
+        position: fixed;
+        left: 50%;
+        top: 50%;
+        transform: translate(-50%, -50%);
+        background: #222;
+        border: 1px solid #444;
+        border-radius: 8px;
+        padding: 25px;
+        z-index: 100;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.8);
+        min-width: 300px;
+        max-height: 85vh;
+        overflow-y: auto;
+    }
+
+    .modal h3 {
+        margin-top: 0;
+        border-bottom: 1px solid #444;
+        padding-bottom: 10px;
+    }
+
+    .modal-overlay {
+        display: none;
+        position: fixed;
+        top: 0; left: 0; right: 0; bottom: 0;
+        background: rgba(0,0,0,0.6);
+        z-index: 99;
+    }
+
+    .modal input[type="text"], .modal input[type="number"] {
+        width: 100%;
+        box-sizing: border-box;
+        margin-top: 5px;
+    }
+
+    .modal select {
+        width: 100%;
+        margin-top: 5px;
+        padding: 8px;
+    }
+    
+    .modal-buttons {
+        margin-top: 20px;
+        display: flex;
+        justify-content: flex-end;
+        gap: 10px;
+    }
+
+    /* Pattern Library Styles */
+    .pattern-list {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+        gap: 15px;
+        margin-top: 15px;
+    }
+
+    .pattern-card {
+        background: #333;
+        border: 1px solid #555;
+        border-radius: 6px;
+        padding: 10px;
+        cursor: pointer;
+        transition: transform 0.2s, background 0.2s;
+    }
+
+    .pattern-card:hover {
+        background: #444;
+        transform: scale(1.03);
+    }
+
+    .pattern-card h4 {
+        margin: 0 0 5px 0;
+        font-size: 14px;
+    }
+
+    .pattern-card .ruleset {
+        font-size: 11px;
+        color: #aaa;
+        margin-bottom: 10px;
+        min-height: 26px;
+    }
+
+    .mini-grid {
+        display: grid;
+        gap: 1px;
+        justify-content: center;
+        margin: 0 auto;
+        background: #222;
+        padding: 4px;
+        border-radius: 4px;
+        width: fit-content;
+    }
+
+    .mini-cell {
+        width: 3px;
+        height: 3px;
+        background: #222;
+    }
+
+    .mini-cell.alive {
+        background: #00ff66;
+    }
+</style>
+</head>
+<body>
+
+<div id="controls">
+    <div class="control-group">
+        <button id="startButton" onclick="start()">Start</button>
+        <button id="stopButton" onclick="stop()" style="display: none;">Stop</button>
+        <button onclick="stepBoard()">Step</button>
+        <button onclick="resetToGenZero()">Reset</button>
+    </div>
+
+    <div class="control-group">
+        <button onclick="undo()" title="Ctrl+Z">Undo</button>
+        <button onclick="redo()" title="Ctrl+Y">Redo</button>
+        <button onclick="clearBoard()" title="Backspace / Ctrl+X">Clear</button>
+    </div>
+
+    <div class="control-group">
+        <button onclick="openModal('patternModal')" style="background: #2b5c8f;">Pattern Library</button>
+    </div>
+
+    <div class="control-group">
+        <button onclick="openModal('ruleModal')">Rules</button>
+        <button onclick="openModal('settingsModal')">Settings</button>
+    </div>
+
+    <div class="control-group">
+        Speed:
+        <input id="speed" type="range" min="1" max="60" value="15">
+        <span id="speedLabel" style="width: 20px; text-align: right;">15</span>
+    </div>
+
+    <div class="control-group">
+        Gen: <span id="generation" style="width: 40px; text-align: right;">0</span>
+    </div>
+</div>
+
+<div id="grid"></div>
+
+<!-- Pattern Library Modal -->
+<div id="patternModal" class="modal" style="width: 80%; max-width: 600px;">
+    <h3>Pattern Library</h3>
+    <div id="patternList" class="pattern-list">
+        <!-- Populated via JS -->
+    </div>
+    <div class="modal-buttons">
+        <button onclick="closeModal('patternModal')">Close</button>
+    </div>
+</div>
+
+<!-- Rules Modal -->
+<div id="ruleModal" class="modal">
+    <h3>Rule Editor</h3>
+    
+    <p>
+        Presets:
+        <option value="2,3|3">Conway's Life (B3/S23)</option>
+<option value="2,3,4|3">Ant Colony (B3/S234)</option>
+<option value="2,3|3,6">HighLife (B36/S23)</option>
+<option value="1,2,5|3,6">2x2 (B36/S125)</option>
+<option value="3,4,6,7,8|3,6,7,8">Day & Night (B3678/S34678)</option>
+<option value="1,3,5,7|1,3,5,7">Replicator (B1357/S1357)</option>
+<option value="2,3,4,5|3">Maze (B3/S12345)</option>
+<option value="1,2,3,4,5|3">Mazectric (B3/S1234)</option>
+<option value="2,3,4,5|3,8">Move (B368/S245)</option>
+<option value="2,3,4,5|3,6,7,8">Anneal (B4678/S35678)</option>
+<option value="1,2,3,4,5|3,7">Diamoeba (B35678/S5678)</option>
+<option value="0,1,2,3,4,5,6,7,8|3">Seeds (B2/S)</option>
+<option value="2,3|3,4,5">Life Without Death (B3/S012345678)</option>
+<option value="2,3|3,4">34 Life (B34/S34)</option>
+<option value="2,3,4|3,4">Assimilation (B345/S4567)</option>
+<option value="1,2,3,4,5|3,4,5">Long Life (B345/S5)</option>
+    </p>
+
+    <p>
+        Survival Counts (e.g. 2,3)
+        <input id="surviveRule" type="text" value="2,3">
+    </p>
+
+    <p>
+        Birth Counts (e.g. 3)
+        <input id="birthRule" type="text" value="3">
+    </p>
+
+    <div class="modal-buttons">
+        <button onclick="closeModal('ruleModal')">Cancel</button>
+        <button onclick="saveRules()" style="background: #00ff66; color: #111; font-weight: bold;">Save</button>
+    </div>
+</div>
+
+<!-- Settings Modal -->
+<div id="settingsModal" class="modal">
+    <h3>Board Settings</h3>
+
+    <p style="display: flex; justify-content: space-between; gap: 10px;">
+        <span>Width:<br><input id="boardWidth" type="number" value="64" min="10" max="800"></span>
+        <span>Height:<br><input id="boardHeight" type="number" value="64" min="10" max="800"></span>
+    </p>
+
+    <div style="text-align: left; margin-top: 15px; background: #333; padding: 10px; border-radius: 6px;">
+        <label style="cursor: pointer; display: block; margin-bottom: 8px;">
+            <input id="boardWrap" type="radio" name="edgeMode" value="wrap" checked>
+            <b>Toroidal</b> (Loop around edges)
+        </label>
+        <label style="cursor: pointer; display: block; margin-bottom: 8px;">
+            <input id="boardFalloff" type="radio" name="edgeMode" value="falloff">
+            <b>Bounded</b> (Stop at edges)
+        </label>
+        <label style="cursor: pointer; display: block;">
+            <input id="boardInfinite" type="radio" name="edgeMode" value="infinite">
+            <b>Infinite</b> (Fall off map)
+        </label>
+    </div>
+
+    <div class="modal-buttons">
+        <button onclick="closeModal('settingsModal')">Cancel</button>
+        <button onclick="applySettings()" style="background: #00ff66; color: #111; font-weight: bold;">Apply & Reset</button>
+    </div>
+</div>
+
+<div id="overlay" class="modal-overlay" onclick="closeAllModals()"></div>
+
+<!-- Version Footer -->
+<footer style="margin: 40px auto 20px auto; padding: 15px; font-size: 13px; color: #666; border-top: 1px solid #222; max-width: 600px; display: flex; justify-content: center; align-items: center; gap: 10px; flex-wrap: wrap;">
+    <span>Conway's Game Of Life 1.0</span>
+    <span>|</span>
+    <a href="https://crosmakesgames.github.io" target="_blank" style="color: #888; text-decoration: none;">crosmakesgames.github.io</a>
+    <span>|</span>
+    <img src="logo.png" alt="Logo" style="height: 50px; max-width: 300px; object-fit: contain;" onerror="this.style.display='none';">
+</footer>
+
+<script>
+// Configuration & State
+let boardWidth = 64;
+let boardHeight = 64;
+let wrapEnabled = true;
+let edgeMode = 'wrap'; // 'wrap', 'falloff', or 'infinite'
+let infiniteSet = new Set(); // Stores all live cell coordinates in "x,y" format for infinite mode
+let initialInfiniteSet = null;
+
+let board = [];
+let domCells = []; // 2D array caching DOM elements for speed
+let generation = 0;
+let timer = null;
+let initialBoardState = null; // Caches the board layout at Generation 0
+
+// Rules
+let surviveRules = [2, 3];
+let birthRules = [3];
+
+// History & Interaction
+let history = [];
+let historyIndex = -1;
+let isDrawing = false;
+let drawMode = 1; // 1 for drawing alive, 0 for drawing dead
+
+const grid = document.getElementById("grid");
+
+// --- Pattern Data ---
+const PATTERNS = {
+    glider: {
+        name: "Glider",
+        ruleset: "Conway's Life (B3/S23)",
+        data: [
+            [0,1,0],
+            [0,0,1],
+            [1,1,1]
+        ]
+    },
+
+    gun: {
+        name: "Gosper Glider Gun",
+        ruleset: "Conway's Life (B3/S23)",
+        data: [ [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0], [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,1,0,0,0,0,0,0,0,0,0,0,0], [0,0,0,0,0,0,0,0,0,0,0,0,1,1,0,0,0,0,0,0,1,1,0,0,0,0,0,0,0,0,0,0,0,0,1,1], [0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,1,0,0,0,0,1,1,0,0,0,0,0,0,0,0,0,0,0,0,1,1], [1,1,0,0,0,0,0,0,0,0,1,0,0,0,0,0,1,0,0,0,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0], [1,1,0,0,0,0,0,0,0,0,1,0,0,0,1,0,1,1,0,0,0,0,1,0,1,0,0,0,0,0,0,0,0,0,0,0], [0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,1,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0], [0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0], [0,0,0,0,0,0,0,0,0,0,0,0,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0] ]
+    },
+
+    yeast: {
+        name: "Yeast",
+        ruleset: "Conway's Life (B3/S23)",
+        data: [
+            [0,0,1,0,0],
+            [0,0,0,1,0],
+            [0,1,0,0,1],
+            [1,1,1,0,0],
+            [0,1,0,0,0]
+        ]
+    },
+
+    block: {
+        name: "Block",
+        ruleset: "Conway's Life (B3/S23)",
+        data: [
+            [1,1],
+            [1,1]
+        ]
+    },
+
+    beehive: {
+        name: "Beehive",
+        ruleset: "Conway's Life (B3/S23)",
+        data: [
+            [0,1,1,0],
+            [1,0,0,1],
+            [0,1,1,0]
+        ]
+    },
+
+    loaf: {
+        name: "Loaf",
+        ruleset: "Conway's Life (B3/S23)",
+        data: [
+            [0,1,1,0],
+            [1,0,0,1],
+            [0,1,0,1],
+            [0,0,1,0]
+        ]
+    },
+
+    boat: {
+        name: "Boat",
+        ruleset: "Conway's Life (B3/S23)",
+        data: [
+            [1,1,0],
+            [1,0,1],
+            [0,1,0]
+        ]
+    },
+
+    tub: {
+        name: "Tub",
+        ruleset: "Conway's Life (B3/S23)",
+        data: [
+            [0,1,0],
+            [1,0,1],
+            [0,1,0]
+        ]
+    },
+
+    blinker: {
+        name: "Blinker",
+        ruleset: "Conway's Life (B3/S23)",
+        data: [
+            [1,1,1]
+        ]
+    },
+
+    toad: {
+        name: "Toad",
+        ruleset: "Conway's Life (B3/S23)",
+        data: [
+            [0,1,1,1],
+            [1,1,1,0]
+        ]
+    },
+
+    beacon: {
+        name: "Beacon",
+        ruleset: "Conway's Life (B3/S23)",
+        data: [
+            [1,1,0,0],
+            [1,1,0,0],
+            [0,0,1,1],
+            [0,0,1,1]
+        ]
+    },
+
+    pulsar: {
+        name: "Pulsar",
+        ruleset: "Conway's Life (B3/S23)",
+        data: [
+            [0,0,1,1,1,0,0,0,0,1,1,1,0,0],
+            [0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+            [1,0,0,0,0,1,0,0,1,0,0,0,0,1],
+            [1,0,0,0,0,1,0,0,1,0,0,0,0,1],
+            [1,0,0,0,0,1,0,0,1,0,0,0,0,1],
+            [0,0,1,1,1,0,0,0,0,1,1,1,0,0]
+        ]
+    },
+
+    lwss: {
+        name: "Lightweight Spaceship",
+        ruleset: "Conway's Life (B3/S23)",
+        data: [
+            [0,1,1,1,1],
+            [1,0,0,0,1],
+            [0,0,0,0,1],
+            [1,0,0,1,0]
+        ]
+    },
+
+    mwss: {
+        name: "Middleweight Spaceship",
+        ruleset: "Conway's Life (B3/S23)",
+        data: [
+            [0,0,1,1,1,1],
+            [1,0,0,0,0,1],
+            [0,0,0,0,0,1],
+            [1,0,0,0,1,0],
+            [0,1,0,0,0,0]
+        ]
+    },
+
+    hwss: {
+        name: "Heavyweight Spaceship",
+        ruleset: "Conway's Life (B3/S23)",
+        data: [
+            [0,0,1,1,1,1,1],
+            [1,0,0,0,0,0,1],
+            [0,0,0,0,0,0,1],
+            [1,0,0,0,0,1,0],
+            [0,1,0,0,0,0,0]
+        ]
+    },
+
+    rpentomino: {
+        name: "R-Pentomino",
+        ruleset: "Conway's Life (B3/S23)",
+        data: [
+            [0,1,1],
+            [1,1,0],
+            [0,1,0]
+        ]
+    },
+
+    acorn: {
+        name: "Acorn",
+        ruleset: "Conway's Life (B3/S23)",
+        data: [
+            [0,1,0,0,0,0,0],
+            [0,0,0,1,0,0,0],
+            [1,1,0,0,1,1,1]
+        ]
+    },
+
+    diehard: {
+        name: "Diehard",
+        ruleset: "Conway's Life (B3/S23)",
+        data: [
+            [0,0,0,0,0,0,1,0],
+            [1,1,0,0,0,0,0,0],
+            [0,1,0,0,0,1,1,1]
+        ]
+    },
+
+    replicatorSeed: {
+        name: "Replicator Seed",
+        ruleset: "Replicator (B1357/S1357)",
+        data: [
+            [1,0,1],
+            [0,1,0],
+            [1,0,1]
+        ]
+    },
+
+    highlifeReplicator: {
+        name: "HighLife Replicator",
+        ruleset: "HighLife (B36/S23)",
+        data: [
+            [0,0,1],
+            [1,1,1],
+            [1,0,1]
+        ]
+    },
+
+    dayNightCross: {
+        name: "Day & Night Cross",
+        ruleset: "Day & Night (B3678/S34678)",
+        data: [
+            [0,1,0],
+            [1,1,1],
+            [0,1,0]
+        ]
+    },
+
+    antNest: {
+        name: "Ant Nest",
+        ruleset: "Ant Colony (B3/S234)",
+        data: [
+            [1,1,0],
+            [1,0,1],
+            [0,1,1]
+        ]
+    },
+
+    twobytwoEngine: {
+        name: "2x2 Engine Seed",
+        ruleset: "2x2 (B36/S125)",
+        data: [
+            [1,1,0,1],
+            [1,0,1,0],
+            [0,1,1,1]
+        ]
+    }
+};
+
+// --- Initialization ---
+
+function createBoard() {
+    stop();
+    grid.innerHTML = "";
+    grid.style.gridTemplateColumns = `repeat(${boardWidth}, 10px)`;
+    
+    board = [];
+    domCells = [];
+
+    for (let y = 0; y < boardHeight; y++) {
+        let row = [];
+        let domRow = [];
+
+        for (let x = 0; x < boardWidth; x++) {
+            row.push(0);
+
+            const cell = document.createElement("div");
+            cell.className = "cell";
+            cell.dataset.x = x;
+            cell.dataset.y = y;
+
+            grid.appendChild(cell);
+            domRow.push(cell);
+        }
+
+        board.push(row);
+        domCells.push(domRow);
+    }
+
+    generation = 0;
+    history = [];
+    historyIndex = -1;
+    infiniteSet.clear();
+    initialBoardState = board.map(r => [...r]);
+    initialInfiniteSet = new Set(infiniteSet);
+}
+
+function buildPatternLibrary() {
+    const list = document.getElementById("patternList");
+    list.innerHTML = "";
+
+    for (const [key, pattern] of Object.entries(PATTERNS)) {
+        const card = document.createElement("div");
+        card.className = "pattern-card";
+        card.onclick = () => loadPattern(key);
+
+        const title = document.createElement("h4");
+        title.textContent = pattern.name;
+
+        const ruleset = document.createElement("div");
+        ruleset.className = "ruleset";
+        ruleset.textContent = "For: " + pattern.ruleset;
+
+        const miniGrid = document.createElement("div");
+        miniGrid.className = "mini-grid";
+        miniGrid.style.gridTemplateColumns = `repeat(${pattern.data[0].length}, 3px)`;
+
+        for (let y = 0; y < pattern.data.length; y++) {
+            for (let x = 0; x < pattern.data[y].length; x++) {
+                const cell = document.createElement("div");
+                cell.className = "mini-cell" + (pattern.data[y][x] ? " alive" : "");
+                miniGrid.appendChild(cell);
+            }
+        }
+
+        card.appendChild(title);
+        card.appendChild(ruleset);
+        card.appendChild(miniGrid);
+        list.appendChild(card);
+    }
+}
+
+// --- Interaction / Drawing Logic ---
+
+grid.addEventListener("mousedown", (e) => {
+    if (e.target.classList.contains("cell")) {
+        isDrawing = true;
+        const x = parseInt(e.target.dataset.x);
+        const y = parseInt(e.target.dataset.y);
+        
+        // If clicking on an alive cell, we switch to eraser mode
+        drawMode = board[y][x] === 1 ? 0 : 1; 
+        
+        setCell(x, y, drawMode);
+    }
+});
+
+grid.addEventListener("mouseover", (e) => {
+    if (isDrawing && e.target.classList.contains("cell")) {
+        const x = parseInt(e.target.dataset.x);
+        const y = parseInt(e.target.dataset.y);
+        setCell(x, y, drawMode);
+    }
+});
+
+// Attach mouseup to document to catch drag releases outside the grid
+document.addEventListener("mouseup", () => {
+    if (isDrawing) {
+        isDrawing = false;
+        saveState(); // Commit the drawn stroke to history
+    }
+});
+
+function setCell(x, y, value) {
+    if (board[y][x] !== value) {
+        board[y][x] = value;
+        domCells[y][x].classList.toggle("alive", value === 1);
+    }
+}
+
+// --- History (Undo/Redo) ---
+
+function saveState() {
+    if (historyIndex < history.length - 1) {
+        history = history.slice(0, historyIndex + 1);
+    }
+
+    if (history.length >= 50) {
+        history.shift();
+        historyIndex--;
+    }
+
+    if (edgeMode === 'infinite') {
+        syncInfiniteSet();
+    }
+
+    history.push({
+        board: board.map(r => [...r]),
+        generation: generation,
+        infiniteSet: new Set(infiniteSet)
+    });
+    
+    historyIndex++;
+
+    // Track state of board during Generation 0 to allow easy resetting
+    if (generation === 0) {
+        initialBoardState = board.map(r => [...r]);
+        initialInfiniteSet = new Set(infiniteSet);
+    }
+}
+
+function restoreState(state) {
+    board = state.board.map(r => [...r]);
+    generation = state.generation;
+    if (state.infiniteSet) {
+        infiniteSet = new Set(state.infiniteSet);
+    } else {
+        syncInfiniteSet();
+    }
+    render();
+}
+
+function undo() {
+    stop();
+    if (historyIndex > 0) {
+        historyIndex--;
+        restoreState(history[historyIndex]);
+    }
+}
+
+function redo() {
+    stop();
+    if (historyIndex < history.length - 1) {
+        historyIndex++;
+        restoreState(history[historyIndex]);
+    }
+}
+
+// --- Keyboard Shortcuts ---
+
+document.addEventListener("keydown", (e) => {
+    // Disable shortcuts if typing in an input inside a modal
+    if (e.target.tagName === 'INPUT') return;
+
+    if (e.key === "z" && (e.ctrlKey || e.metaKey)) {
+        e.preventDefault();
+        undo();
+    } else if (e.key === "y" && (e.ctrlKey || e.metaKey)) {
+        e.preventDefault();
+        redo();
+    } else if (e.key === "x" && (e.ctrlKey || e.metaKey)) {
+        e.preventDefault();
+        clearBoard();
+    } else if (e.key === "Backspace") {
+        e.preventDefault();
+        clearBoard();
+    } else if (e.key === " " || e.code === "Space") {
+        e.preventDefault();
+        if (timer) {
+            stop();
+        } else {
+            start();
+        }
+    }
+});
+
+// --- Game Logic ---
+
+function render() {
+    for (let y = 0; y < boardHeight; y++) {
+        for (let x = 0; x < boardWidth; x++) {
+            domCells[y][x].classList.toggle("alive", board[y][x] === 1);
+        }
+    }
+    document.getElementById("generation").textContent = generation;
+}
+
+function neighbors(x, y) {
+    let count = 0;
+
+    for (let dy = -1; dy <= 1; dy++) {
+        for (let dx = -1; dx <= 1; dx++) {
+            if (dx === 0 && dy === 0) continue;
+
+            let nx = x + dx;
+            let ny = y + dy;
+
+            if (wrapEnabled) {
+                nx = (nx + boardWidth) % boardWidth;
+                ny = (ny + boardHeight) % boardHeight;
+            }
+
+            if (nx >= 0 && ny >= 0 && nx < boardWidth && ny < boardHeight) {
+                count += board[ny][nx];
+            }
+        }
+    }
+
+    return count;
+}
+
+function getInfiniteNeighbors(x, y) {
+    let count = 0;
+    for (let dy = -1; dy <= 1; dy++) {
+        for (let dx = -1; dx <= 1; dx++) {
+            if (dx === 0 && dy === 0) continue;
+            if (infiniteSet.has(`${x + dx},${y + dy}`)) {
+                count++;
+            }
+        }
+    }
+    return count;
+}
+
+function syncInfiniteSet() {
+    // Delete any visible cells in set to let current board state dominate,
+    // keeping any out of bounds cells alive
+    for (let y = 0; y < boardHeight; y++) {
+        for (let x = 0; x < boardWidth; x++) {
+            infiniteSet.delete(`${x},${y}`);
+            if (board[y][x] === 1) {
+                infiniteSet.add(`${x},${y}`);
+            }
+        }
+    }
+}
+
+function stepBoard() {
+    if (edgeMode === 'infinite') {
+        syncInfiniteSet();
+
+        // Find all candidates (live cells + all adjacent coordinates)
+        const candidates = new Set();
+        for (let key of infiniteSet) {
+            const [x, y] = key.split(',').map(Number);
+            candidates.add(key);
+            for (let dy = -1; dy <= 1; dy++) {
+                for (let dx = -1; dx <= 1; dx++) {
+                    candidates.add(`${x + dx},${y + dy}`);
+                }
+            }
+        }
+
+        const nextInfiniteSet = new Set();
+        for (let key of candidates) {
+            const [x, y] = key.split(',').map(Number);
+            const alive = infiniteSet.has(key);
+            const n = getInfiniteNeighbors(x, y);
+            if (alive) {
+                if (surviveRules.includes(n)) {
+                    nextInfiniteSet.add(key);
+                }
+            } else {
+                if (birthRules.includes(n)) {
+                    nextInfiniteSet.add(key);
+                }
+            }
+        }
+        infiniteSet = nextInfiniteSet;
+
+        // Build the visible board representation
+        const next = [];
+        for (let y = 0; y < boardHeight; y++) {
+            const row = [];
+            for (let x = 0; x < boardWidth; x++) {
+                row.push(infiniteSet.has(`${x},${y}`) ? 1 : 0);
+            }
+            next.push(row);
+        }
+        board = next;
+    } else {
+        const next = [];
+        for (let y = 0; y < boardHeight; y++) {
+            const row = [];
+            for (let x = 0; x < boardWidth; x++) {
+                const alive = board[y][x] === 1;
+                const n = neighbors(x, y);
+
+                if (alive) {
+                    row.push(surviveRules.includes(n) ? 1 : 0);
+                } else {
+                    row.push(birthRules.includes(n) ? 1 : 0);
+                }
+            }
+            next.push(row);
+        }
+        board = next;
+    }
+    generation++;
+    render();
+    saveState();
+}
+
+function loop() {
+    stepBoard();
+    const speed = Number(document.getElementById("speed").value);
+    timer = setTimeout(loop, 1000 / speed);
+}
+
+function start() {
+    if (timer) return;
+    document.getElementById("startButton").style.display = "none";
+    document.getElementById("stopButton").style.display = "inline-block";
+    loop();
+}
+
+function stop() {
+    if (timer) {
+        clearTimeout(timer);
+        timer = null;
+    }
+    document.getElementById("startButton").style.display = "inline-block";
+    document.getElementById("stopButton").style.display = "none";
+}
+
+function clearBoard() {
+    stop();
+    for (let y = 0; y < boardHeight; y++) {
+        for (let x = 0; x < boardWidth; x++) {
+            board[y][x] = 0;
+        }
+    }
+    generation = 0;
+    render();
+    saveState();
+}
+
+function resetToGenZero() {
+    stop();
+    if (initialBoardState) {
+        board = initialBoardState.map(r => [...r]);
+        generation = 0;
+        if (initialInfiniteSet) {
+            infiniteSet = new Set(initialInfiniteSet);
+        } else {
+            syncInfiniteSet();
+        }
+        render();
+        saveState();
+    }
+}
+
+// --- Pattern Loader ---
+
+function loadPattern(name) {
+    if (!name || !PATTERNS[name]) return;
+    
+    // Clear board without saving state yet
+    for (let y = 0; y < boardHeight; y++) {
+        for (let x = 0; x < boardWidth; x++) {
+            board[y][x] = 0;
+        }
+    }
+    generation = 0;
+
+    const pattern = PATTERNS[name].data;
+
+    // Place in the center
+    const startY = Math.max(0, Math.floor((boardHeight - pattern.length) / 2));
+    const startX = Math.max(0, Math.floor((boardWidth - pattern[0].length) / 2));
+
+    for (let y = 0; y < pattern.length; y++) {
+        for (let x = 0; x < pattern[y].length; x++) {
+            if (startY + y < boardHeight && startX + x < boardWidth) {
+                board[startY + y][startX + x] = pattern[y][x];
+            }
+        }
+    }
+
+    render();
+    saveState();
+    closeModal('patternModal');
+}
+
+// --- Modals & Settings ---
+
+function openModal(id) {
+    document.getElementById("overlay").style.display = "block";
+    document.getElementById(id).style.display = "block";
+    
+    if (id === 'settingsModal') {
+        document.getElementById("boardWidth").value = boardWidth;
+        document.getElementById("boardHeight").value = boardHeight;
+        document.getElementById("boardWrap").checked = (edgeMode === 'wrap');
+        document.getElementById("boardFalloff").checked = (edgeMode === 'falloff');
+        document.getElementById("boardInfinite").checked = (edgeMode === 'infinite');
+    }
+}
+
+function closeModal(id) {
+    document.getElementById("overlay").style.display = "none";
+    document.getElementById(id).style.display = "none";
+}
+
+function closeAllModals() {
+    closeModal('ruleModal');
+    closeModal('settingsModal');
+    closeModal('patternModal');
+}
+
+function applySettings() {
+    boardWidth = Math.max(10, parseInt(document.getElementById("boardWidth").value) || 64);
+    boardHeight = Math.max(10, parseInt(document.getElementById("boardHeight").value) || 64);
+    
+    if (document.getElementById("boardWrap").checked) {
+        edgeMode = 'wrap';
+        wrapEnabled = true;
+    } else if (document.getElementById("boardFalloff").checked) {
+        edgeMode = 'falloff';
+        wrapEnabled = false;
+    } else if (document.getElementById("boardInfinite").checked) {
+        edgeMode = 'infinite';
+        wrapEnabled = false;
+    }
+    
+    closeModal('settingsModal');
+    createBoard();
+    loadPattern('glider'); // Reset implies re-adding the initial glider
+}
+
+// --- Rules ---
+
+function applyRulePreset() {
+    const val = document.getElementById("rulePreset").value;
+    const parts = val.split("|");
+    document.getElementById("surviveRule").value = parts[0];
+    document.getElementById("birthRule").value = parts[1];
+}
+
+function saveRules() {
+    surviveRules = document.getElementById("surviveRule").value
+        .split(",")
+        .map(v => parseInt(v.trim()))
+        .filter(v => !isNaN(v));
+
+    birthRules = document.getElementById("birthRule").value
+        .split(",")
+        .map(v => parseInt(v.trim()))
+        .filter(v => !isNaN(v));
+
+    closeModal('ruleModal');
+}
+
+// --- Bootstrapping ---
+
+document.getElementById("speed").addEventListener("input", e => {
+    document.getElementById("speedLabel").textContent = e.target.value;
+});
+
+// Startup routines
+buildPatternLibrary();
+createBoard();
+loadPattern('glider'); // Starts the board with a glider and saves initial state
+
+</script>
+
+<script>
+    window.CMG_SNAPSHOT_MANIFEST = {"title": "Conways Game of Life v2", "description": "the game itself lands: index.html (1067 lines) plus logo. first playable version. commit e93d06f: 'Add files via upload'. (6-28-26)", "project": "Conways Game of Life", "date": "6-28-26", "commit": "e93d06f", "lines": "+1,067 / -0", "chars": "27,384", "version": "Version 1.0 (from the site footer)"};
+</script>
+<script src="../../snapshot-sidebar.js" defer></script>
+</body>
+</html>

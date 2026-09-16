@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Horion Launcher</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --hacker-blue: #0070ff;
+      --neon-blue: #00e5ff;
+      --bg-dark: #000000;
+      --card-bg: rgba(0, 10, 30, 0.62);
+      --card-bg-soft: rgba(7, 20, 40, 0.56);
+      --border-glow: rgba(0, 112, 255, 0.3);
+      --status-ok: #5fd5ff;
+      --status-error: #ff9f9f;
+      --muted: #8ea7bf;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      color: #ffffff;
+      font-family: "Inter", sans-serif;
+      background-color: var(--bg-dark);
+      background-image:
+        radial-gradient(circle at 18% 8%, rgba(0, 229, 255, 0.12), transparent 30%),
+        radial-gradient(circle at 80% 14%, rgba(0, 112, 255, 0.16), transparent 36%),
+        radial-gradient(circle at center, #001a33 0%, #000000 100%);
+      display: grid;
+      align-items: center;
+      justify-items: center;
+      padding: 18px 16px;
+    }
+
+    .portal-shell {
+      width: min(1000px, 100%);
+      display: grid;
+      gap: 18px;
+    }
+
+    .portal-container {
+      background: var(--card-bg);
+      border: 1px solid var(--border-glow);
+      border-radius: 8px;
+      padding: 46px 34px;
+      text-align: center;
+      box-shadow: 0 0 40px rgba(0, 112, 255, 0.1);
+      backdrop-filter: blur(5px);
+    }
+
+    .portal-title {
+      font-family: "JetBrains Mono", monospace;
+      font-size: 0.78rem;
+      color: var(--neon-blue);
+      letter-spacing: 0.38em;
+      text-transform: uppercase;
+      margin-bottom: 16px;
+    }
+
+    .app-name {
+      margin: 0;
+      font-size: clamp(2.15rem, 8.2vw, 4rem);
+      font-weight: 300;
+      letter-spacing: clamp(0.26em, 1.9vw, 0.42em);
+      text-transform: uppercase;
+      color: #ffffff;
+      text-indent: 0.2em;
+    }
+
+    .description {
+      max-width: 680px;
+      margin: 20px auto 28px;
+      color: #90a7ba;
+      font-size: 1rem;
+      line-height: 1.65;
+      font-weight: 300;
+    }
+
+    .launch-btn {
+      display: inline-block;
+      border: 1px solid var(--hacker-blue);
+      background: rgba(0, 112, 255, 0.12);
+      color: #ffffff;
+      font-family: "JetBrains Mono", monospace;
+      font-size: 1.04rem;
+      font-weight: 700;
+      letter-spacing: 0.26em;
+      text-transform: uppercase;
+      padding: 18px 58px;
+      cursor: pointer;
+      transition: all 0.24s ease;
+      min-width: 280px;
+    }
+
+    .launch-btn:hover {
+      background: var(--hacker-blue);
+      box-shadow: 0 0 30px rgba(0, 112, 255, 0.8);
+      transform: scale(1.03);
+    }
+
+    .launch-btn:active {
+      transform: scale(1.01);
+    }
+
+    .status-label {
+      margin-top: 18px;
+      font-family: "JetBrains Mono", monospace;
+      font-size: 0.74rem;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      color: var(--status-ok);
+      min-height: 1.2em;
+    }
+
+    .status-label.error {
+      color: var(--status-error);
+    }
+
+    .meta-grid {
+      display: grid;
+      gap: 12px;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    .meta-card {
+      background: var(--card-bg-soft);
+      border: 1px solid rgba(0, 112, 255, 0.2);
+      border-radius: 4px;
+      padding: 14px;
+    }
+
+    .meta-card h3 {
+      margin: 0 0 8px;
+      font-family: "JetBrains Mono", monospace;
+      color: #81dfff;
+      font-size: 0.75rem;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+    }
+
+    .meta-card p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 0.86rem;
+      line-height: 1.55;
+      word-break: break-word;
+    }
+
+    .footer-row {
+      display: grid;
+      gap: 12px;
+      justify-items: center;
+      margin-top: 4px;
+      text-align: center;
+    }
+
+    .beta-note {
+      max-width: 760px;
+      color: #9cc2d8;
+      font-family: "JetBrains Mono", monospace;
+      font-size: 0.8rem;
+      letter-spacing: 0.06em;
+      line-height: 1.6;
+      text-transform: uppercase;
+      padding: 10px 12px;
+      border: 1px solid rgba(0, 112, 255, 0.24);
+      background: rgba(0, 112, 255, 0.08);
+      border-radius: 4px;
+    }
+
+    .bug-btn {
+      display: inline-block;
+      border: 1px solid rgba(0, 229, 255, 0.65);
+      background: rgba(0, 112, 255, 0.2);
+      color: #e5f9ff;
+      font-family: "JetBrains Mono", monospace;
+      font-size: 0.9rem;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      text-decoration: none;
+      font-weight: 700;
+      padding: 14px 26px;
+      min-width: 360px;
+      border-radius: 4px;
+      transition: all 0.2s ease;
+    }
+
+    .bug-btn:hover {
+      color: #ffffff;
+      border-color: var(--neon-blue);
+      background: rgba(0, 229, 255, 0.2);
+      box-shadow: 0 0 20px rgba(0, 229, 255, 0.4);
+    }
+
+    .github-link {
+      color: #77d7ff;
+      text-decoration: none;
+      font-family: "JetBrains Mono", monospace;
+      font-size: 0.82rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      border-bottom: 1px solid rgba(119, 215, 255, 0.35);
+      padding-bottom: 2px;
+    }
+
+    .github-link:hover {
+      color: #c8f1ff;
+      border-bottom-color: rgba(200, 241, 255, 0.75);
+    }
+
+    @media (max-width: 860px) {
+      .portal-container {
+        padding: 34px 18px;
+      }
+
+      .description {
+        margin-bottom: 22px;
+      }
+
+      .launch-btn {
+        width: 100%;
+        min-width: 0;
+      }
+
+      .bug-btn {
+        width: 100%;
+        min-width: 0;
+      }
+
+      .meta-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+    .testing-btn {
+  display: inline-block;
+  margin-top: 12px;
+  border: 1px solid rgba(0, 229, 255, 0.45);
+  background: rgba(0, 112, 255, 0.08);
+  color: #bfefff;
+  font-family: "JetBrains Mono", monospace;
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  padding: 11px 30px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  min-width: 220px;
+}
+
+.testing-btn:hover {
+  background: rgba(0, 229, 255, 0.15);
+  border-color: var(--neon-blue);
+  box-shadow: 0 0 16px rgba(0, 229, 255, 0.35);
+}
+  </style>
+</head>
+<body>
+  <div class="portal-shell">
+    <section class="portal-container">
+      <div class="portal-title">Base Horion</div>
+      <h1 class="app-name">HORION</h1>
+      <p class="description">
+        Horion is a game launcher and TV platform, with a built in Youtube unblocker and Live Sports, along with loads of features, all in a about:blank frame. I'm a genius.
+      </p>
+
+      <button id="launch-about-blank" class="launch-btn" type="button">
+  Launch Horion
+</button>
+
+<br>
+
+<button id="launch-testing" class="testing-btn" type="button">
+  Launch Testing Branch
+</button>
+      <div id="status-log" class="status-label">Ready for injection</div>
+    </section>
+
+    <div class="footer-row">
+      <a
+        class="bug-btn"
+        href="https://discord.gg/b2mRwGnNCU"
+        target="_blank"
+        rel="noopener noreferrer"
+      >
+        Join Discord
+      </a>
+      <a class="github-link" href="https://horion.crosmakesgames.com" target="_blank" rel="noopener noreferrer">Visit Official GitHub</a>
+    </div>
+  </div>
+
+  <script>
+const TARGET_URL = 'https://horion.crosmakesgames.com';
+const TARGET_FAVICON_URL = 'https://crosmakesgames.github.io/horion/favicon.ico';
+const TESTING_TARGET_URL = 'https://horionexp.crosmakesgames.com';
+
+const launchBtn = document.getElementById('launch-about-blank');
+const testingBtn = document.getElementById('launch-testing');
+const statusLog = document.getElementById('status-log');
+
+function setStatus(message, isError = false) {
+    if (!statusLog) return;
+
+    statusLog.textContent = message;
+    statusLog.classList.toggle('error', isError);
+}
+
+async function launchIntoAboutBlank(targetUrl) {
+    setStatus("Executing Horion injection...");
+
+    // Must happen immediately from button click
+    const popup = window.open("about:blank", "_blank");
+
+    if (!popup) {
+        setStatus("Popup blocked. Allow popups and retry.", true);
+        return;
+    }
+
+    popup.document.open();
+    popup.document.write(`
+<!DOCTYPE html>
+<html>
+<head>
+<title>Loading Horion...</title>
+<style>
+html,body {
+    margin:0;
+    width:100%;
+    height:100%;
+    background:#000;
+    color:#fff;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-family:sans-serif;
+}
+</style>
+</head>
+<body>
+Loading Horion...
+</body>
+</html>
+`);
+    popup.document.close();
+
+    try {
+        const response = await fetch(targetUrl);
+
+        if (!response.ok) {
+            throw new Error("HTTP " + response.status);
+        }
+
+        let html = await response.text();
+
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(html, "text/html");
+
+        // Fix relative links
+        let base = doc.querySelector("base");
+
+        if (!base) {
+            base = doc.createElement("base");
+            base.href = targetUrl.endsWith("/")
+                ? targetUrl
+                : targetUrl + "/";
+
+            doc.head.prepend(base);
+        }
+
+        // Change title
+        doc.title = "Horion";
+
+        // Replace favicon
+        doc.querySelectorAll('link[rel*="icon"]').forEach(e => e.remove());
+
+        const icon = doc.createElement("link");
+        icon.rel = "icon";
+        icon.href = TARGET_FAVICON_URL;
+        doc.head.appendChild(icon);
+
+
+        popup.document.open();
+        popup.document.write(
+            "<!DOCTYPE html>" + doc.documentElement.outerHTML
+        );
+        popup.document.close();
+
+        setStatus("Horion Successfully Launched");
+
+    } catch (err) {
+        console.error(err);
+
+        popup.document.open();
+        popup.document.write(`
+<h2 style="
+font-family:sans-serif;
+color:white;
+background:black;
+padding:40px">
+Failed to load Horion.<br><br>
+${err.message}
+</h2>
+`);
+        popup.document.close();
+
+        setStatus("Failed to fetch website.", true);
+    }
+}
+
+
+if (launchBtn) {
+    launchBtn.addEventListener("click", () => {
+        launchIntoAboutBlank(TARGET_URL);
+    });
+}
+
+
+if (testingBtn) {
+    testingBtn.addEventListener("click", () => {
+        launchIntoAboutBlank(TESTING_TARGET_URL);
+    });
+}
+  </script>
+
+<script>
+    window.CMG_SNAPSHOT_MANIFEST = {"title": "Horion Launcher v4", "description": "launcher rework, 113 in 100 out. the dark hacker-blue theme era. commit a7ef41b: 'Update index.html'. (7-23-26)", "project": "Horion Launcher", "date": "7-23-26", "commit": "a7ef41b", "lines": "+113 / -100", "chars": "2,839", "version": "RECENT CHANGES [RECENT UPDATE: 2.6]:\nLoads of bug fixes\nOverall polishing/outside of Horion stuff\nAdded minimizing the navbar\nBrand new source for TV\nNew youtube full revamp\nNew sorting for games\nAdded a open link button for TV\nAdded TV server 3\nNew game carousel for top-notch games\nNew unreleased tv/movie detection"};
+</script>
+<script src="../../snapshot-sidebar.js" defer></script>
+</body>
+</html>

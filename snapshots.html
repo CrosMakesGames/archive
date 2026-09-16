@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Snapshots - The CrosMakesGames Archive</title>
+
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="icon" href="favicon.ico" sizes="any">
+    <link rel="shortcut icon" type="image/x-icon" href="favicon.ico">
+
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=JetBrains+Mono:wght@400;500;700;800&display=swap" rel="stylesheet">
+
+    <style>        body, p, a, span, li, button {
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        h1, h2, h3 {
+            font-family: 'JetBrains Mono', monospace;
+            font-weight: 800;
+            line-height: 1.4;
+        }
+
+        .pixel-font {
+            font-family: 'Press Start 2P', cursive;
+        }
+
+        html { scroll-behavior: smooth; }
+
+                .navbar {
+            position: sticky;
+            top: 0;
+            z-index: 50;
+            background: #FDFBF7;
+            border-bottom: 4px solid #000;
+        }
+
+        .nav-link {
+            font-family: 'Press Start 2P', cursive;
+            font-size: 10px;
+            padding: 10px 14px;
+            border: 2px solid transparent;
+            color: #000;
+            text-decoration: none;
+            transition: all 0.15s;
+            white-space: nowrap;
+        }
+
+        .nav-link:hover {
+            background: #FFD166;
+            border: 2px solid #000;
+            box-shadow: 2px 2px 0px 0px rgba(0,0,0,1);
+        }
+
+        .nav-link.active {
+            background: #000;
+            color: #FDFBF7;
+        }
+
+                .section-divider {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            margin: 32px 0 24px;
+        }
+
+        .section-divider .line {
+            flex: 1;
+            height: 3px;
+            background: #000;
+            border-radius: 2px;
+        }
+
+        .section-divider .dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #000;
+        }
+
+                .project-section {
+            border: 3px solid #000;
+            background: #fff;
+            box-shadow: 5px 5px 0px 0px rgba(0,0,0,1);
+            margin-bottom: 24px;
+            overflow: hidden;
+        }
+
+        .project-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            width: 100%;
+            padding: 14px 16px;
+            background: #fff;
+            border: none;
+            cursor: pointer;
+            text-align: left;
+            transition: background 0.15s;
+        }
+
+        .project-header:hover {
+            background: #FFD166;
+        }
+
+        .project-stripe {
+            width: 14px;
+            height: 14px;
+            border: 2px solid #000;
+            background: var(--project-color, #FFD166);
+            flex-shrink: 0;
+        }
+
+        .project-name {
+            font-family: 'Press Start 2P', cursive;
+            font-size: 12px;
+            color: #000;
+        }
+
+        .project-count {
+            font-size: 12px;
+            font-weight: 700;
+            color: #666;
+            margin-left: auto;
+            white-space: nowrap;
+        }
+
+        .collapse-arrow {
+            font-family: 'Press Start 2P', cursive;
+            font-size: 10px;
+            color: #000;
+            flex-shrink: 0;
+            transition: transform 0.2s;
+        }
+
+        .project-section.collapsed .collapse-arrow {
+            transform: rotate(-90deg);
+        }
+
+        .project-body {
+            padding: 16px;
+            border-top: 3px solid #000;
+        }
+
+        .project-section.collapsed .project-body {
+            display: none;
+        }
+
+                .snapshot-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+            gap: 16px;
+        }
+
+        .snapshot-bubble {
+            position: relative;
+            background: #fff;
+            border: 3px solid #000;
+            box-shadow: 4px 4px 0px 0px rgba(0,0,0,1);
+            padding: 18px 14px 14px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .snapshot-bubble:hover {
+            transform: translate(-2px, -2px);
+            box-shadow: 6px 6px 0px 0px rgba(0,0,0,1);
+            background: #FFFDF5;
+        }
+
+        .snapshot-bubble:active {
+            transform: translate(2px, 2px);
+            box-shadow: 1px 1px 0px 0px rgba(0,0,0,1);
+        }
+
+        .snapshot-bubble::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 6px;
+            background: var(--project-color, #FFD166);
+        }
+
+        .bubble-date {
+            font-family: 'Press Start 2P', cursive;
+            font-size: 10px;
+            color: #000;
+            margin-top: 4px;
+        }
+
+        .bubble-method {
+            font-size: 12px;
+            color: #444;
+            line-height: 1.4;
+        }
+
+        .bubble-project {
+            font-size: 11px;
+            font-weight: 700;
+            color: #888;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .bubble-zip {
+            font-size: 11px;
+            font-weight: 700;
+            color: #1D61E8;
+            text-decoration: underline;
+            text-underline-offset: 2px;
+            margin-top: auto;
+        }
+
+        .bubble-zip:hover {
+            color: #0B3FA8;
+        }
+
+        .empty-note {
+            font-size: 13px;
+            color: #666;
+            font-style: italic;
+        }
+
+        @media (max-width: 768px) {
+            .section-divider { margin: 24px 0 18px; gap: 10px; }
+            .nav-link { font-size: 8px; padding: 8px 8px; }
+            .snapshot-grid { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 12px; }
+            .project-name { font-size: 10px; }
+
+        }
+    </style>
+</head>
+
+<body class="bg-[#FDFBF7] text-gray-900 min-h-screen">
+
+<nav class="navbar">
+    <div class="max-w-5xl mx-auto flex items-center gap-3 sm:gap-5 px-4 sm:px-6 py-3">
+        <a href="https://crosmakesgames.com/" class="flex items-center gap-3 sm:gap-4 flex-shrink-0" title="crosmakesgames.com">
+            <img src="logo.png" alt="CrosMakesGames Logo" class="w-14 sm:w-16 object-contain">
+            <span class="pixel-font text-[10px] sm:text-xs text-black leading-snug">The CrosMakesGames Archive</span>
+        </a>
+        <div class="ml-auto flex items-center gap-1 sm:gap-2">
+            <a class="nav-link" href="index.html#timeline-start">Timeline</a>
+            <a class="nav-link active" href="snapshots.html">Snapshots</a>
+            <a class="nav-link" href="#" id="random-link">Random</a>
+        </div>
+    </div>
+</nav>
+
+<div class="max-w-5xl mx-auto px-4 sm:px-6 py-8 sm:py-12">
+
+    <header class="max-w-3xl">
+        <div class="section-divider mb-6">
+            <span class="dot"></span>
+            <h1 class="text-base sm:text-lg text-black whitespace-nowrap">the snapshots</h1>
+            <span class="line"></span>
+        </div>
+        <p class="text-gray-800 text-sm leading-relaxed">
+            Every snapshot of each project I have ever made throughout SSL - Horion is here. You can click any and download anything. Everything is free and open source.
+        </p>
+    </header>
+
+    <div class="section-divider">
+        <span class="dot"></span>
+        <h2 class="text-sm sm:text-base text-black whitespace-nowrap">collection</h2>
+        <span class="line"></span>
+    </div>
+
+    <div id="projects-container" class="mt-2"></div>
+
+    <footer class="pt-8 mt-8 border-t-4 border-black text-center text-black font-medium">
+        The CrosMakesGames Archive - part of <a href="https://crosmakesgames.com/" class="font-bold underline text-underline-offset-2">crosmakesgames.com</a>.
+        <p>&copy; 2026 CrosMakesGames.</p>
+    </footer>
+
+</div>
+
+<script src="snapshots-data.js"></script>
+
+<script>const projectsContainer = document.getElementById('projects-container');
+
+snapshotProjects.forEach((p) => {
+    const section = document.createElement('div');
+    section.className = 'project-section';
+    section.style.setProperty('--project-color', p.color || '#FFD166');
+
+    const countText = p.snapshots.length + (p.snapshots.length === 1 ? ' snapshot' : ' snapshots');
+
+    let bubblesHtml = '';
+    if (p.snapshots.length === 0) {
+        bubblesHtml = '<p class="empty-note">No snapshots of this project yet.</p>';
+    } else {
+        p.snapshots.forEach((s) => {
+            const zipUrl = s.zip ? 'snapshot-zips/' + encodeURIComponent(s.zip) : null;
+            bubblesHtml += `
+                <div class="snapshot-bubble" onclick="window.location.href='snapshots/' + encodeURIComponent('${s.folder.replace(/'/g, "\\'")}') + '/index.html'">
+                    <div class="bubble-date">${s.date}</div>
+                    <div class="bubble-method">${s.method}</div>
+                    <div class="bubble-project">${p.project}</div>
+                    ${zipUrl ? `<a class="bubble-zip" href="${zipUrl}" download onclick="event.stopPropagation()">download zip</a>` : ''}
+                </div>
+            `;
+        });
+    }
+
+    section.innerHTML = `
+        <button class="project-header" aria-expanded="true">
+            <span class="project-stripe"></span>
+            <span class="project-name">${p.project}</span>
+            <span class="project-count">${countText}</span>
+            <span class="collapse-arrow">&#9660;</span>
+        </button>
+        <div class="project-body">
+            <div class="snapshot-grid">${bubblesHtml}</div>
+        </div>
+    `;
+
+        const header = section.querySelector('.project-header');
+    header.addEventListener('click', () => {
+        section.classList.toggle('collapsed');
+        header.setAttribute('aria-expanded', section.classList.contains('collapsed') ? 'false' : 'true');
+    });
+
+    projectsContainer.appendChild(section);
+});
+
+const randomLink = document.getElementById('random-link');
+
+randomLink.addEventListener('click', (e) => {
+    e.preventDefault();
+    const withPages = snapshotProjects.filter(p =>
+        p.snapshots.some(s => s.page !== false));
+    if (withPages.length === 0) {
+        window.location.href = 'snapshots.html';
+        return;
+    }
+    const project = withPages[Math.floor(Math.random() * withPages.length)];
+    const pool = project.snapshots.filter(s => s.page !== false);
+    const snap = pool[Math.floor(Math.random() * pool.length)];
+    window.location.href = 'snapshots/' + encodeURIComponent(snap.folder) + '/index.html';
+});
+</script>
+
+</body>
+</html>

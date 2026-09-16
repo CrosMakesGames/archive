@@ -1,0 +1,1692 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Into The Deep - Made by CMG</title>
+<style>
+:root {
+    --bg: #050505; --panel: #0e0e0e; --border: #333;
+    --gold: #ffb300; --hp: #d32f2f; --mp: #1976d2; --text: #c0c0c0;
+    --theme: #444;
+}
+
+
+body { font-family: 'Courier New', monospace; background: var(--bg); color: var(--text); margin:0; display:flex; justify-content:center; align-items:center; height:100vh; overflow:hidden; user-select:none; }
+* { box-sizing: border-box; }
+
+
+#app { width: 1100px; height: 95vh; background: var(--panel); border: 1px solid var(--border); display: flex; flex-direction: column; box-shadow: 0 0 50px #000; position: relative; }
+
+
+/* Header & Nav */
+header { height: 70px; background: #000; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; padding: 0 20px; }
+.hdr-left { display: flex; flex-direction: column; gap: 5px; align-items: flex-start; }
+.hdr-title { font-size: 1.1em; font-weight: bold; color: #fff; }
+.hdr-lvl { display: flex; align-items: center; gap: 10px; }
+.lvl-bar { width: 100px; height: 8px; background: #222; border-radius: 4px; overflow: hidden; }
+.lvl-fill { height: 100%; background: var(--gold); transition: width 0.3s; }
+.hdr-right { display: flex; align-items: center; gap: 15px; }
+.gold-display { font-size: 1.2em; font-weight: bold; color: var(--gold); display: flex; align-items: center; gap: 5px; }
+.btn-reset { background: #222; border: 1px solid #444; color: #666; cursor: pointer; font-size: 0.7em; padding: 5px 8px; transition: 0.2s; }
+.btn-reset:hover { border-color: var(--hp); color: var(--hp); }
+
+
+.nav { display: flex; background: #111; }
+.nav-btn { flex: 1; padding: 15px; background: transparent; border: none; color: #555; font-weight: bold; cursor: pointer; border-right: 1px solid #222; transition: 0.2s; }
+.nav-btn:last-child { border-right: none; }
+.nav-btn:hover { color: #fff; background: #1a1a1a; }
+.nav-btn.active { background: #1a1a1a; color: var(--gold); border-bottom: 2px solid var(--gold); }
+
+
+/* Screens */
+.screen { display: none; flex: 1; padding: 20px; overflow: hidden; flex-direction: column; }
+.screen.active { display: flex; }
+
+
+/* Hub */
+.hub-grid { display: flex; gap: 20px; height: 100%; }
+.panel { flex: 1; background: #141414; border: 1px solid #2a2a2a; padding: 15px; display: flex; flex-direction: column; overflow: hidden; }
+/* Original: grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); */
+.item-grid { overflow-y: auto; display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 10px; align-content: start; padding-right: 5px; }
+
+
+/* Cards */
+.card { background: #1a1a1a; border: 1px solid #333; padding: 10px; cursor: pointer; position: relative; transition: 0.1s; }
+.card:hover { background: #222; border-color: #666; transform: translateY(-2px); }
+.card-top { display: flex; justify-content: space-between; align-items: flex-start; }
+.card-name { font-weight: bold; color: #eee; font-size: 0.9em; margin-right: 5px; }
+.card-type { font-size: 0.7em; color: #666; text-transform: uppercase; margin-top: 5px; display: block; }
+.btn-sell { background: #300; border: 1px solid #500; color: #f55; font-size: 0.7em; padding: 2px 6px; cursor: pointer; z-index: 2; }
+.btn-sell:hover { background: #f00; color: #fff; border-color: #fff; }
+
+
+.r-0 { border-left: 3px solid tan; }
+.r-1 { border-left: 3px solid lightgreen; }
+.r-2 { border-left: 3px solid grey; }
+.r-3 { border-left: 3px solid purple; }
+.r-4 { border-left: 3px solid lightgreen; }
+.r-5 { border-left: 3px solid grey; }
+.r-6 { border-left: 3px solid pink; }
+.r-7 { border-left: 3px solid darkred; }
+.r-8 { border-left: 3px solid darkgrey; }
+.r-9 { border-left: 3px solid darkbrown; }
+.r-10 { border-left: 3px solid red; }
+
+
+/* Tooltip */
+#tooltip { position: fixed; pointer-events: none; z-index: 2000; background: rgba(0,0,0,0.95); border: 1px solid #555; padding: 15px; width: 250px; display: none; box-shadow: 0 0 20px #000; }
+.tt-title { font-weight: bold; font-size: 1.1em; color: var(--gold); margin-bottom: 5px; display: block; }
+.tt-meta { font-size: 0.8em; color: #888; margin-bottom: 10px; display: block; border-bottom: 1px solid #333; padding-bottom: 5px; }
+.tt-desc { font-size: 0.9em; color: #ccc; line-height: 1.4; }
+
+
+/* Loadout */
+.slot { background: #0a0a0a; border: 1px dashed #444; padding: 10px; margin-bottom: 5px; text-align: center; cursor: pointer; color: #555; transition: 0.2s; }
+.slot:hover { background: #111; border-color: #666; }
+.slot.filled { border: 1px solid var(--gold); color: var(--gold); background: rgba(255, 179, 0, 0.05); }
+.btn-start { margin-top: auto; padding: 15px; background: var(--gold); border: none; font-weight: 900; font-size: 1.2em; cursor: pointer; color: #000; text-transform: uppercase; }
+.btn-start:hover { filter: brightness(1.1); }
+
+
+/* Traders */
+ .trader-row { display: flex; background: #111; border: 1px solid #333; padding: 10px;
+margin-bottom: 10px; align-items: center; gap: 15px; } .trader-info { width: 140px; text-align: center; font-size: 0.9em; }
+
+
+/* Game HUD */
+.hud { display: flex; justify-content: space-between; background: #000; padding: 10px 20px; border-bottom: 1px solid #333; align-items: center; }
+.floor-badge { font-size: 1.2em; font-weight: bold; color: var(--theme); text-transform: uppercase; letter-spacing: 2px; }
+.bar { width: 180px; height: 12px; background: #222; border: 1px solid #555; display: inline-block; vertical-align: middle; margin-left: 5px; }
+.fill { height: 100%; transition: width 0.2s; }
+.hp { background: var(--hp); } .mp { background: var(--mp); }
+
+
+/* Stage */
+    .stage { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; top: 50px;position: relative; }
+    .narrative { text-align: center; max-width: 600px; margin-bottom: 20px; animation: fade 0.5s; }
+    .room-title { font-size: 2.5em; color: #fff; margin: 0 0 10px 0; text-shadow: 0 0 10px var(--theme); }
+    .room-desc { font-size: 1.1em; color: #aaa; }
+
+
+/* Combat */
+#combat-ui { display: none; width: 600px; flex-direction: column; align-items: center; }
+.enemy-bar { width: 100%; display: flex; background: #111; padding: 15px; border: 1px solid #444; gap: 15px; align-items: center; margin-bottom: 10px; }
+.enemy-hp-bg { flex: 1; height: 12px; background: #222; border: 1px solid #555; }
+.enemy-hp-fill { height: 100%; background: var(--hp); transition: width 0.2s; }
+#canvas-box { width: 600px; height: 350px; background: #000; border: 2px solid #fff; position: relative; display: none; cursor: none; }
+   
+.controls { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; width: 600px; margin-top: 20px; }
+.btn-act { padding: 20px; background: rgba(20,20,20,0.9); border: 1px solid #444; color: #aaa; cursor: pointer; text-align: left; transition: 0.2s; position:relative; }
+.btn-act:hover { background: #222; border-color: var(--theme); color: #fff; }
+.btn-act strong { display: block; color: var(--theme); font-size: 1.1em; margin-bottom: 3px; }
+.btn-heal { grid-column: span 2; text-align: center; border-color: var(--mp); }
+.btn-heal strong { color: var(--mp); }
+
+
+/* Overlays */
+.overlay { position: fixed; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.95); z-index: 100; display: none; justify-content: center; align-items: center; flex-direction: column; }
+   
+.travel-bar { width: 400px; height: 6px; background: #222; border-radius: 3px; overflow: hidden; margin-top: 20px; }
+.travel-fill { width: 0%; height: 100%; background: var(--gold); transition: width linear; }
+
+
+.qte-keys { display: flex; gap: 15px; margin-top: 20px; }
+.key-box { width: 60px; height: 60px; border: 2px solid #555; color: #555; font-size: 2em; display: flex; align-items: center; justify-content: center; font-weight: bold; }
+.key-active { border-color: #fff; color: #fff; background: #222; box-shadow: 0 0 20px #fff; }
+   
+.modal-box { background: #111; border: 2px solid var(--gold); width: 450px; padding: 30px; text-align: center; box-shadow: 0 0 50px #000; }
+.modal-btn { background: var(--gold); color: #000; border: none; padding: 10px 20px; font-weight: bold; cursor: pointer; margin-top: 20px; font-size: 1.1em; }
+.loot-text { color: var(--gold); font-size: 1.2em; margin: 10px 0; display: block; }
+
+
+/* --- UPDATED DEPLOY BUTTON STYLES --- */
+/* This targets the deploy buttons (which are assumed to be generated) inside the deploy-buttons container */
+#deploy-buttons button {
+    background: var(--gold);
+    color: #000;
+    border: none;
+    padding: 10px 20px;
+    font-weight: bold;
+    cursor: pointer;
+    font-size: 1.1em;
+    margin: 5px;
+}
+
+
+/* Ensure the CANCEL button inside deploy-act also uses the modal style if it's not already */
+#deploy-act .modal-btn {
+    /* Re-using the existing modal-btn class */
+    margin-top: 0; /* Remove top margin from the generic modal-btn style if needed */
+}
+
+
+.trader-grid {  overflow-y: auto; display: grid; grid-template-columns: repeat(auto-fill, minmax(80px, 1fr)); gap: 10px; align-content: start; padding-right: 5px; }
+.trader-info { width: 120px; text-align: center; font-size: 0.9em; }
+
+
+@keyframes fade { from{opacity:0; transform:translateY(10px)} to{opacity:1; transform:translateY(0)} }
+</style>
+</head>
+<body>
+
+
+<div id="tooltip">
+    <span class="tt-title" id="tt-title">Item Name</span>
+    <span class="tt-meta" id="tt-meta">Rarity | Type</span>
+    <div class="tt-desc" id="tt-desc">Description goes here.</div>
+    <div id="tt-gold-note" class="gold-note" style="display:none;">Gold indicates that you bought this item from a Trader.</div>
+</div>
+
+
+<div id="app">
+    <header>
+        <div class="hdr-left">
+            <div class="hdr-title">INTO THE DEEP <span style="color:#555">1.4 <small>MADE BY CMG</small></span></div>
+            <div class="hdr-lvl">
+                <div style="font-weight:bold; color:#ccc; font-size:0.9em;">LVL: <span id="hud-lvl">1</span></div>
+                <div class="lvl-bar"><div id="hud-xp-fill" class="lvl-fill" style="width:0%"></div></div>
+                <div style="font-size:0.85em; color:#aaa;" id="hud-xp-label">0 / 100 XP</div>
+            </div>
+        </div>
+        <div class="hdr-right">
+            <div class="gold-display">🪙 <span id="hud-gold">0</span></div>
+            <button class="btn-reset" onclick="wipeData()">WIPE DATA</button>
+        </div>
+    </header>
+
+
+    <nav class="nav" id="nav-bar">
+        <button class="nav-btn active" onclick="switchScreen('hub')">INVENTORY</button>
+        <button class="nav-btn" onclick="switchScreen('trader')">TRADERS</button>
+        <button class="nav-btn" onclick="switchScreen('player')">PLAYER</button>
+    </nav>
+
+
+    <div id="screen-hub" class="screen active">
+        <div class="hub-grid">
+            <div class="panel" style="flex:2">
+                <h3>STASH</h3>
+                <div id="stash-grid" class="item-grid"></div>
+            </div>
+            <div class="panel">
+                <h3>LOADOUT</h3>
+
+
+                <div class="slot" id="slot-weapon" onclick="unequip('weapon')">Weapon</div>
+                <div class="slot" id="slot-armor" onclick="unequip('armor')">Armor</div>
+                <div class="slot" id="slot-spell" onclick="unequip('spell')">Spell</div>
+                <div class="slot" id="slot-shield" onclick="unequip('shield')">Shield</div>
+                <button class="btn-start" onclick="startRun()">DESCEND</button>
+            </div>
+        </div>
+    </div>
+
+
+    <div id="screen-trader" class="screen">
+        <div class="panel" id="trader-list"></div>
+    </div>
+
+
+    <div id="screen-player" class="screen">
+        <div class="panel" style="display:flex; gap:20px;">
+            <div style="flex:1; display:flex; flex-direction:column; align-items:center; justify-content:flex-start;">
+                <h3 style="width:100%; text-align:left;">LEVEL</h3>
+                <div style="width:220px; height:220px; display:flex; align-items:center; justify-content:center; position:relative;">
+                    <svg width="220" height="220" viewBox="0 0 100 100">
+                        <defs>
+                            <linearGradient id="g1" x1="0" x2="1" y1="0" y2="0">
+                                <stop offset="0%" stop-color="#ffecb3"/><stop offset="100%" stop-color="#ffb300"/>
+                            </linearGradient>
+                        </defs>
+                        <circle cx="50" cy="50" r="45" stroke="#222" stroke-width="10" fill="none"></circle>
+                        <circle id="xp-circle" cx="50" cy="50" r="45" stroke="url(#g1)" stroke-width="10" fill="none" stroke-linecap="round" transform="rotate(-90 50 50)" stroke-dasharray="0 283"></circle>
+                       
+                    </svg>
+                    <div id="player-lvl-big" style="position:absolute; text-align:center; font-size:48px; font-weight:900; color:#fff;">1</div>
+                </div>
+                <div style="height:10px"></div>
+                <div id="player-xp-text" style="color:#ccc;"></div>
+                <div style="height:20px"></div>
+                <div style="width:100%; text-align:left;">
+                    <h4 style="margin:0 0 6px 0; color:#ccc;">Next Level Rewards</h4>
+                    <div id="next-level-rewards" style="display:flex; flex-direction:column; gap:6px; color:#bbb;"></div>
+                </div>
+            </div>
+
+
+            <div style="flex:1;">
+                <h3 style="text-align:left;">STATS</h3>
+                <div style="
+                    display:flex;
+                    flex-direction:column;
+                    gap:8px;
+                    color:#ccc;
+                    padding-right:6px;
+                ">
+                    <div>Deepest Floor: <span id="stat-deepest">0</span></div>
+                    <div>Total Kills: <span id="stat-kills">0</span></div>
+                    <div>Total Extracts: <span id="stat-extracts">0</span></div>
+                    <div>Total Deaths: <span id="stat-deaths">0</span></div>
+                    <div id="stat-hell" style="display:none;">Furthest Room In Hell: <span id="stat-hellroom">0</span></div>
+                </div>
+                <div style="height:20px"></div>
+                <div style="color:#999; font-size:0.9em;">Note: Level determines the highest trader tier you may use.</div>
+            </div>
+        </div>
+    </div>
+
+
+    <div id="screen-game" class="screen">
+        <div class="hud">
+            <div id="floor-room-wrapper" style="display:flex; gap:10px; align-items:center;">
+            <div id="floor-txt" class="floor-badge">FLOOR 1</div>
+            <div id="room-txt" class="floor-badge">ROOM 1/8</div>
+            </div>
+            <div style="text-align:right">
+                HP <div class="bar"><div id="bar-hp" class="fill hp" style="width:100%"></div></div>
+                MP <div class="bar"><div id="bar-mp" class="fill mp" style="width:100%"></div></div>
+            </div>
+        </div>
+
+
+        <div class="stage">
+            <div id="narrative" class="narrative">
+                <h1 id="room-title" class="room-title">Room 1</h1>
+                <p id="room-desc" class="room-desc">The darkness awaits.</p>
+            </div>
+
+
+            <div id="combat-ui">
+                <div class="enemy-bar">
+                    <div style="font-size:2.5em" id="enemy-icon">💀</div>
+                    <div style="flex:1">
+                        <div style="display:flex; justify-content:space-between; color:#fff">
+                            <strong id="enemy-name">Name</strong>
+                            <small style="color:var(--hp)">Pattern: <span id="enemy-pat">Rain</span></small>
+                        </div>
+                        <div class="enemy-hp-bg"><div id="enemy-hp" class="enemy-hp-fill" style="width:100%"></div></div>
+                    </div>
+                </div>
+                <div id="canvas-box">
+                    <div style="position:absolute; top:10px; width:100%; text-align:center; color:#444;
+font-size:0.8em; pointer-events:none;">MOVE WITH WASD OR ARROWS</div>
+                    <canvas id="gameCanvas" width="600" height="350"></canvas>
+                </div>
+            </div>
+
+
+            <div id="controls" class="controls"></div>
+        </div>
+    </div>
+</div>
+
+
+<div id="ov-qte" class="overlay">
+    <h2 style="color:#fff; margin-bottom:10px;">ATTACK SEQUENCE</h2>
+    <div class="qte-keys" id="qte-keys"></div>
+</div>
+
+
+<div id="ov-count" class="overlay" style="background:rgba(0,0,0,0.3);">
+    <div style="font-size:5em; color:#fff; text-shadow:0 0 20px #000;" id="count-num">3</div>
+    <div style="color:#fff; font-size:1.5em;">PREPARE TO DODGE</div>
+</div>
+
+
+<div id="ov-msg" class="overlay" style="background:rgba(0,0,0,0);">
+    <div style="background:#000; padding:20px 40px; border:2px solid #fff; text-align:center;">
+        <h2 id="msg-txt" style="color:var(--gold); margin:0;">MESSAGE</h2>
+    </div>
+</div>
+
+
+<div id="ov-travel" class="overlay" style="background:#050505; z-index:300;">
+    <h2 style="color:#fff; letter-spacing:3px;">TRAVERSING THE DEEP...</h2>
+    <div class="travel-bar"><div id="travel-fill" class="travel-fill"></div></div>
+</div>
+
+
+<div id="modal" class="overlay">
+    <div class="modal-box">
+        <h2 id="modal-h" style="color:var(--gold); margin-top:0;">TITLE</h2>
+        <div id="modal-b" style="color:#ccc; margin:20px 0; line-height:1.5;">Content</div>
+        <div id="modal-act">
+            <button class="modal-btn" onclick="closeModal()">CONTINUE</button>
+        </div>
+    </div>
+</div>
+
+
+<div id="ov-deploy" class="overlay" style="background:rgba(5,5,5,0.95); z-index:400;">
+    <div class="modal-box" style="width:700px;">
+        <h2 style="color:var(--gold); margin-top:0;">FLOOR DEPLOYMENT</h2>
+        <p style="color:#ccc;">Select a floor to deploy to. Locked floors will show required level to unlock.</p>
+        <div id="deploy-buttons" style="display:flex; gap:10px; flex-wrap:wrap; justify-content:center; margin-top:10px;"></div>
+        <div style="height:10px;"></div>
+        <div id="deploy-note" style="color:#aaa; font-size:0.9em;"></div>
+        <div style="height:14px;"></div>
+        <div id="deploy-act" style="text-align:center;"><button class="modal-btn" onclick="closeDeploy()">CANCEL</button></div>
+    </div>
+</div>
+<script>
+const CFG = {
+    startGold: 50, goldMin: 20, goldMax: 25,
+    enemyTurn: 10.0, qte: 4.0, travelTime: 800,
+    healCost: 0.1, healAmt: 0.1
+};
+
+
+const INFINITE_LEVEL_XP = 2500;
+
+
+const THEMES = [
+    { name: "COLOSSEUM", col: "tan", diff: 1.2 },
+    { name: "FIGHTER'S CRYPT", col: "lightgreen", diff: 1.5 },
+    { name: "MARBLE CAVES", col: "grey", diff: 1.8 },
+    { name: "IRIDIUM MINES", col: "purple", diff: 2.0 },
+    { name: "GREENFIRE", col: "lightgreen", diff: 2.3 },
+    { name: "BURNED NEST", col: "grey", diff: 2.6 },
+    { name: "CRYSTAL CATACOMBS", col: "pink", diff: 3.0 },
+    { name: "CASTLE WASTES", col: "darkred", diff: 3.4 },
+    { name: "DEEP NEST", col: "darkgrey", diff: 3.9 },
+    { name: "OBSIDIAN VOID", col: "darkbrown", diff: 4.4 },
+    { name: "HELL", col: "red", diff: 5.0 }
+];
+
+
+//DATABASE
+const DB_ITEMS = [
+    { id:'w0a', type:'weapon', tier:0, name:'Rusty Shiv', dmg:10, val:75, desc:"Barely even sharp. We all start somewhere...(10 DMG)" },
+    { id:'s0', type:'shield', tier:0, name:'Wooden Plank', hp:1, dir:'up', val:75, desc:'A shield only weak Gladiators use. (1 HP | UP)' },
+    { id:'w0b', type:'weapon', tier:0, name:'Sandstone Sword', dmg:15, val:50, desc:'Forged out of compacted sand. (15 DMG)' },
+    { id:'w0c', type:'weapon', tier:0, name:'Beast Bone', dmg:5, val:100, desc:"Low damage fossil from Gagnolius's battle against the beast. Sells for a lot. (5 DMG)" },
+    { id:'w0d', type:'weapon', tier:0, name:'Marble Blade', dmg:18, val:75, desc:'The first blade Gagnolius used in battle. (18 DMG)' },
+    { id:'a0a', type:'armor', tier:0, name:'Ragged Tunic', def:2, val:50, desc:'Basic cloth. (2 DEF)' },
+    { id:'a0b', type:'armor', tier:0, name:'Marble Chestplate', def:5, val:75, desc:'Strong plate. (5 DEF)' },
+    { id:'s0a', type:'spell', tier:0, name:'Sandstorm', dmg:20, cost:10, val:50, desc:'A small sandstorm. (20 DMG | 10 MP)' },
+    { id:'s0b', type:'spell', tier:0, name:'Earthern Dig', dmg:35, cost:20, val:100, desc:'Eject raw marble. (35 DMG | 20 MP)' },
+
+    { id:'w1a', type:'weapon', tier:1, name:'Golden Crown', dmg:12, val:300, desc:"Weak, but sells for high value. (12 DMG)" },
+    { id:'w1b', type:'weapon', tier:1, name:'Rock Launcher', dmg:22, val:325, desc:'Shoots rocks pretty fast. The last thing made by Gagnolius before his time as a Gladiator.(22 DMG)' },
+    { id:'w1c', type:'weapon', tier:1, name:'Bandit Skull', dmg:20, val:325, desc:"Sharpened bandit skull. (20 DMG)" },
+    { id:'w1d', type:'weapon', tier:1, name:"The Protector", dmg:28, val:400, desc:'Diamond forged by the Void Master. Was a gift to Gagnolius for slying the beast. (28 DMG)' },
+    { id:'a1a', type:'armor', tier:1, name:'Golden Plate', def:7, val:300, desc:'Worn by Gagnolius. (7 DEF)' },
+    { id:'a1b', type:'armor', tier:1, name:'Eyepiece', def:12, val:350, desc:"Pure metal eyepiece. A gift to Gagnolius from The Dream Catcher.(12 DEF)" },
+    { id:'s1a', type:'spell', tier:1, name:'Rise', dmg:50, cost:25, val:300, desc:'Summon The Fallen Gladiator! (50 DMG | 25 MP)' },
+    { id:'s1b', type:'spell', tier:1, name:'Cavalry', dmg:35, cost:15, val:300, desc:"Summon the Kingdom's cavalry. (35 DMG | 15 MP)" },
+    { id:'s1', type:'shield', tier:1, name:'Wood Buckler', hp:3, dir:'left', val:250, desc:'Blocks 3 hits from Left. The first creation of Cladius, a esteemed shield master. (3 HP | LEFT)' },
+
+    { id:'w2a', type:'weapon', tier:2, name:'Golden Sword', dmg:35, val:700, desc:"Soft gold, but heavy. (35 DMG)" },
+    { id:'w2b', type:'weapon', tier:2, name:'Diamond Sword', dmg:42, val:700, desc:"Extremely hard edge. (42 DMG)" },
+    { id:'w2c', type:'weapon', tier:2, name:'Marble Dagger', dmg:38, val:600, desc:"Short but deadly. (38 DMG)" },
+    { id:'w2d', type:'weapon', tier:2, name:"Obsidian Dagger", dmg:45, val:700, desc:'Sharp volcanic glass. (45 DMG)' },
+    { id:'a2', type:'armor', tier:2, name:'Diamond Plate', def:15, val:600, desc:"Naturally formed diamond armor. (15 DEF)" },
+    { id:'s2a', type:'spell', tier:2, name:'Landfall', dmg:60, cost:20, val:600, desc:'Cave roof collapse! (60 DMG | 20 MP)' },
+    { id:'s2b', type:'spell', tier:2, name:'Golden Reach', dmg:80, cost:30, val:800, desc:"Crush your enemy with gold! (80 DMG | 30 MP)" },
+    { id:'s2', type:'shield', tier:2, name:'Marble Shield', hp:4, dir:'right', val:600, desc:'A right-facing shield forged from the ancients in the caves. (4 HP | RIGHT)' },
+
+
+    { id:'w3a', type:'weapon', tier:3, name:'Iridium Blade', dmg:60, val:1000, desc:"Forged with dedication and raw-power. (60 DMG)" },
+    { id:'w3b', type:'weapon', tier:3, name:'Sharp Rock', dmg:1, val:1, desc:"Just a sharp rock. Gagnolius was a terrible blacksmith.(1 DMG)" },
+    { id:'w3c', type:'weapon', tier:3, name:'Energy Sword', dmg:70, val:1250, desc:'Made from pure iron and iridium. (70 DMG)' },
+    { id:'a3', type:'armor', tier:3, name:'Iridium Armor', def:20, val:1000, desc:"Rarest material in Carallious. (20 DEF)" },
+    { id:'s3a', type:'spell', tier:3, name:'Energy Blast', dmg:100, cost:25, val:1000, desc:'Channel Iridium energy. (100 DMG | 25 MP)' },
+
+
+    { id:'w4a', type:'weapon', tier:4, name:'Copper Dagger', dmg:95, val:1500, desc:"Common in Greenfire caves. (95 DMG)" },
+    { id:'a4', type:'armor', tier:4, name:'Vine Armor', def:24, val:1000, desc:"Organic protection. (24 DEF)" },
+    { id:'s4a', type:'spell', tier:4, name:'Vine Grab', dmg:150, cost:20, val:1750, desc:'Choke your enemy. (150 DMG | 20 MP)' },
+    { id:'s4b', type:'spell', tier:4, name:'Fireball', dmg:110, cost:15, val:2000, desc:'Incinerate opponent. (110 DMG | 15 MP)' },
+    { id:'s4c', type:'spell', tier:4, name:'Lifesteal', dmg:200, cost:40, val:2000, desc:"Drain their life force. (200 DMG | 40 MP)" },
+    { id:'s4', type:'shield', tier:4, name:'Vine Wall', hp:8, dir:'left', val:1500, desc:'Vines that travel with you and block attacks from the left. (8 HP | LEFT)' },
+
+
+    { id:'w5a', type:'weapon', tier:5, name:'Spider Leg', dmg:140, val:2250, desc:"Sharpened chitin. (140 DMG)" },
+    { id:'w5b', type:'weapon', tier:5, name:'Ash Blade', dmg:160, val:2500, desc:"Blade of compacted ash. (160 DMG)" },
+    { id:'a5', type:'armor', tier:5, name:'Burnt Plate', def:28, val:2250, desc:"Hardened by fire. (28 DEF)" },
+    { id:'s5a', type:'spell', tier:5, name:'Fire Beam', dmg:250, cost:30, val:2250, desc:'A concentrated beam. (250 DMG | 30 MP)' },
+    { id:'s5b', type:'spell', tier:5, name:'Bugfall', dmg:180, cost:15, val:2500, desc:'Bugs fall from the sky. (180 DMG | 15 MP)' },
+    { id:'s5', type:'shield', tier:5, name:'Fire Shield', hp:10, dir:'up', val:2500, desc:'A gift from Cladius to the fire raiders. (10 HP | UP)' },
+
+
+    { id:'w6a', type:'weapon', tier:6, name:'Crystal Blade', dmg:230, val:3000, desc:"Forged by The Dream Catcher in his workshop. The place looks abandoned.(230 DMG)" },
+    { id:'a6', type:'armor', tier:6, name:'Crystal Armor', def:32, val:3000, desc:"Shining protection. (32 DEF)" },
+    { id:'s6a', type:'spell', tier:6, name:'Shine', dmg:200, cost:10, val:3000, desc:'Blinding light. (200 DMG | 10 MP)' },
+
+
+    { id:'w7a', type:'weapon', tier:7, name:'Royal Blade', dmg:350, val:3500, desc:"The King's personal blade. Covered in residue of the void.(350 DMG)" },
+    { id:'w7b', type:'weapon', tier:7, name:"Knight's Sword", dmg:330, val:3750, desc:"Taken off a fallen Knight. His body was covered in black ooze.(330 DMG)" },
+    { id:'a7', type:'armor', tier:7, name:"King's Armor", def:40, val:2750, desc:"Cracked royal shield. (40 DEF)" },
+    { id:'s7a', type:'spell', tier:7, name:"Necromancer's Rise", dmg:500, cost:30, val:3000, desc:"Resurrect the king's army to fight. (500 DMG | 30 MP)" },
+    { id:'s7', type:'shield', tier:7, name:'Ghost Reflecter', hp:12, dir:'right', val:3500, desc:'A see-through shield forged from ghost like minerals. (12 HP | RIGHT)' },
+
+
+    { id:'w8a', type:'weapon', tier:8, name:'Dark Ashen Blade', dmg:500, val:4000, desc:"Forged by insects in the Deep Nest. (500 DMG)" },
+    { id:'a8', type:'armor', tier:8, name:"Black Armor", def:50, val:4000, desc:"Stained with void. (50 DEF)" },
+    { id:'s8a', type:'spell', tier:8, name:"Web Grab", dmg:650, cost:20, val:4000, desc:"Sticky web trap. The insects here are scared of you. (650 DMG | 20 MP)" },
+    { id:'w9a', type:'weapon', tier:9, name:'Obsidian Sword', dmg:750, val:4250, desc:"Overflowing with black ooze. (750 DMG)" },
+    { id:'w9b', type:'weapon', tier:9, name:'Portal Fragment', dmg:700, val:4500, desc:"A shard of the dimensional gate. (700 DMG)" },
+    { id:'w9b2', type:'weapon', tier:9, name:'Void Blade', dmg:850, val:4500, desc:"Infinitely sharp. The Void Master's favorite piece. (850 DMG)" },
+    { id:'a9a', type:'armor', tier:9, name:"Obsidian Armor", def:60, val:4500, desc:"Forged by The Void Master. Was a gift for the King, before they entered the portal. (60 DEF)" },
+    { id:'a9b', type:'armor', tier:9, name:"Void Chestplate", def:75, val:5000, desc:"The final creation of The Void Master before he enetered the portal. (75 DEF)" },
+    { id:'s9a', type:'spell', tier:9, name:"Portal", dmg:1200, cost:35, val:5000, desc:"Summon the power of the last breaths of The Three Survivors. (1200 DMG | 35 MP)" },
+
+
+    { id:'s10', type:'spell', tier:10, name:"The King's Blessing", dmg:5000, cost:10, val:7500, desc:"Ultimate strength. (5000 DMG | 10 MP)" },
+    { id:'w10', type:'weapon', tier:10, name:"The Void Master's Blessing", dmg:2000, val:7500, desc:"Ultimate power. (2000 DMG)" },
+    { id:'a10', type:'armor', tier:10, name:"The Dream Catcher's Blessing", def:100, val:7500, desc:"Ultimate defense. (100 DEF)" },
+    { id:'s10', type:'shield', tier:10, name:"Cladius's Blessing", hp:18, dir:'up', val:7500, desc:'Ultimate blocking. (18 HP | UP)' }
+];
+
+function generateUID() {
+    return Date.now().toString(36) + Math.random().toString(36).substr(2);
+}
+
+const FLOOR_REQUIREMENTS = [
+    1,
+    2,
+    4,
+    5,
+    6,
+    8,
+    10
+];
+
+
+const ALL_PATS = ['rain', 'dash', 'track', 'snake', 'spiral'];
+const DB_ENEMIES = [];
+THEMES.forEach((t, i) => {
+    for(let j=1; j<=4; j++) {
+        const p1 = ALL_PATS[(i+j) % ALL_PATS.length];
+        const p2 = ALL_PATS[(i+j+1) % ALL_PATS.length];
+        DB_ENEMIES.push({ name: `${t.name} Mob ${j}`, tier: i, hp: 18+(i*14)+(j*5), icon: ['⚔','⚔','⚔','⚔'][j%4], patterns: [p1, p2], xpMod: 5 + i*3 });
+    }
+    DB_ENEMIES.push({ name: `${t.name} BOSS`, tier: i, hp: 28+(i*18), boss: true, icon: '👹', patterns: ['spiral','track'], xpMod: 30 + i*10 });
+});
+
+
+const TRADERS = [
+    { id:0, name:'Grave Robber', tier:1, requiredLevel:2, stockCount:5 },
+    { id:1, name:'Energy Miner', tier:3, requiredLevel:4, stockCount:5 },
+    { id:2, name:'Ash Leech', tier:4, requiredLevel:6, stockCount:5 },
+    { id:3, name:'Elder Bug', tier:5, requiredLevel:7, stockCount:5 },
+    { id:4, name:'The Leg Eater', tier:8, requiredLevel:8, stockCount:5 }
+];
+
+
+const DB_LEVELS = [
+    { level:1, xpToNext:100, msg:"", unlockTier:0 },
+    { level:2, xpToNext:200, msg:"", unlockTier:1 },
+    { level:3, xpToNext:300, msg:"", unlockTier:2 },
+    { level:4, xpToNext:400, msg:"", unlockTier:3 },
+    { level:5, xpToNext:500, msg:"", unlockTier:4 },
+    { level:6, xpToNext:750, msg:"", unlockTier:5 },
+    { level:7, xpToNext:1000, msg:"", unlockTier:6 },
+    { level:8, xpToNext:1250, msg:"", unlockTier:7 },
+    { level:9, xpToNext:1750, msg:"", unlockTier:8 },
+    { level:10, xpToNext:2500, msg:"", unlockTier:9 }
+];
+
+
+
+let player = {
+    gold: CFG.startGold, stash:[], loadout:{ weapon:null, armor:null, spell:null, sheild:null }, stats:{hp:100, maxHp:100, mana:100, maxMana:100},
+    level:2, xp:0, deepestFloor:0, totalKills:0, totalExtracts:0, totalDeaths:0, furthestHellRoom:0,
+    runs:0
+};
+let game = { active:false, floor:0, room:0, goldRun:0, enemy:null, currentPattern:null };
+let stocks = [];
+let keys = { w:false, a:false, d:false, space:false };
+let modalCb = null;
+
+
+const SAVE_KEY = 'itd_v27';
+const SAVE_SCHEMA_VERSION = 2;
+
+
+function cloneSerializable(o) {
+    return JSON.parse(JSON.stringify(o));
+}
+
+
+function save() {
+    try {
+        const outPlayer = {
+            gold: player.gold, 
+            stash: cloneSerializable(player.stash),
+            loadout: cloneSerializable(player.loadout),
+            stats: cloneSerializable(player.stats),
+            level: player.level,
+            xp: player.xp,
+            deepestFloor: player.deepestFloor,
+            totalKills: player.totalKills,
+            totalExtracts: player.totalExtracts,
+            totalDeaths: player.totalDeaths,
+            furthestHellRoom: player.furthestHellRoom,
+            runs: player.runs,
+            inRun: player.inRun
+        };
+        const out = {
+            meta: { ver: SAVE_SCHEMA_VERSION, ts: Date.now() },
+            player: outPlayer,
+            stocks: stocks
+        };
+        localStorage.setItem(SAVE_KEY, JSON.stringify(out));
+    } catch(e) {
+        console.warn("Save failed:", e);
+    }
+}
+function load() {
+    try {
+        const raw = localStorage.getItem(SAVE_KEY);
+        if(!raw) return;
+        const parsed = JSON.parse(raw);
+        if(!parsed) return;
+        const sp = parsed.player || parsed;
+        if (parsed.stocks) {
+            stocks = parsed.stocks;
+        }
+
+
+        const allowedKeys = [
+            'gold','stash','loadout','stats','level','xp','deepestFloor',
+            'totalKills','totalExtracts','totalDeaths','furthestHellRoom','runs', 'inRun'
+        ];
+       
+        allowedKeys.forEach(k => {
+            if(sp[k] !== undefined && sp[k] !== null) {
+                if(Array.isArray(sp[k])) player[k] = cloneSerializable(sp[k]);
+                else if(typeof sp[k] === 'object') player[k] = cloneSerializable(sp[k]);
+                else player[k] = sp[k];
+            }
+        });
+
+
+        if(!Array.isArray(player.stash)) player.stash = player.stash ? [player.stash] : [];
+        if(!player.loadout) player.loadout = { weapon:null, armor:null, spell:null, sheild:null };
+        if(!player.stats) player.stats = {hp:100,maxHp:100,mana:100,maxMana:100};
+
+
+    } catch(e) {
+        console.warn("Failed to load save, ignoring.", e);
+    }
+
+
+    if (player.inRun === true) {
+        console.log("Player reloaded mid-game. Penalizing.");
+
+
+        player.loadout = { weapon: null, armor: null, spell: null, shield: null };
+       
+        if(!player.stash.length && typeof DB_ITEMS !== 'undefined') {
+            player.stash.push(cloneSerializable(DB_ITEMS[0]));
+        }
+       
+        player.totalDeaths = (player.totalDeaths || 0) + 1;
+       
+        player.inRun = false;
+
+
+        save();
+
+
+        setTimeout(() => {
+            switchScreen('hub');
+            const nav = document.getElementById('nav-bar');
+            if(nav) nav.style.display = 'flex';
+
+
+            showModal("YOU DIED", "Disconnect/Reload detected. Gear Lost.");
+           
+            const act = document.getElementById('modal-act');
+            if(act) {
+                act.innerHTML = `<button class="modal-btn" onclick="closeModal()">ACCEPT</button>`;
+            }
+        }, 100);
+    }
+}
+
+
+
+
+function wipeData() {
+    try {
+        localStorage.removeItem(SAVE_KEY);
+
+
+        player.gold = 50;
+        player.stash = [];
+        player.loadout = { weapon:null, armor:null, spell:null, shield:null };
+        player.stats = { hp:100, maxHp:100, mana:100, maxMana:100 };
+        player.level = 1;
+        player.xp = 0;
+
+
+        player.deepestFloor = 0;
+        player.totalKills = 0;
+        player.totalExtracts = 0;
+        player.totalDeaths = 0;
+        player.furthestHellRoom = 0;
+        player.runs = 0;
+
+
+        save();
+        location.reload();
+
+
+        console.log("Save wiped successfully.");
+    } catch (e) {
+        console.warn("Failed to wipe save:", e);
+    }
+}
+
+
+window.addEventListener('beforeunload', () => { save(); });
+
+
+window.onload = () => {
+    load();
+    if(!player.stash) player.stash = [];
+    if(!player.loadout) player.loadout = { weapon:null, armor:null, spell:null, sheild:null };
+    if(!player.stats) player.stats = {hp:100,maxHp:100,mana:100,maxMana:100};
+    if(player.stash.length === 0 && !player.loadout.weapon) player.stash.push(cloneSerializable(DB_ITEMS[0]));
+    refreshStocks(); renderHub(); renderPlayer(); updateHUD();
+};
+
+
+function refreshStocks() {
+    stocks = TRADERS.map(t => {
+        const pool = DB_ITEMS.filter(i => i.tier === t.tier);
+       
+        const shuffled = pool.slice().sort(()=>0.5-Math.random());
+        return shuffled.slice(0, t.stockCount || 3);
+    });
+}
+
+
+function buy(tIndex, iIndex) {
+    const trader = TRADERS[tIndex];
+    if (!stocks[tIndex]) return;
+   
+    const item = stocks[tIndex][iIndex];
+    if(!item) return;
+   
+    if(player.level < trader.requiredLevel) return alert(`This trader requires Level ${trader.requiredLevel}`);
+   
+    if(player.gold >= item.val) {
+        player.gold -= item.val;
+        
+        // CHANGE: Add 'uid: generateUID()' to the new item
+        const newItem = Object.assign({}, cloneSerializable(item), { 
+            purchased: true,
+            uid: generateUID() // <--- Give it a unique identity
+        });
+        
+        player.stash.push(newItem);
+        stocks[tIndex].splice(iIndex,1);
+    }
+    renderTrader();
+    document.getElementById('hud-gold').innerText = player.gold;
+}
+
+
+
+function renderTrader() {
+    const c = document.getElementById('trader-list');
+    c.innerHTML='';
+    TRADERS.forEach((t,i)=>{
+        let locked = player.level < t.requiredLevel;
+        let h = `<div class="trader-row ${locked ? 'locked-card' : ''}">`;
+       
+        h += `<div class="trader-info"><strong>${t.name}</strong><div style="font-size:0.8em; color:#aaa;">Tier ${t.tier} Trades</div>`;
+        if(locked) h += `<div class="lock-overlay">LOCKED<br/>Unlock Level ${t.requiredLevel} to access</div>`;
+       
+        h += `</div><div style="display:flex; gap:10px; flex-wrap:wrap; align-items:center">`;
+        const list = stocks[i] || [];
+       
+        if(list.length === 0) h += `<div style="color:#777">Out of Stock</div>`;
+       
+        list.forEach((it,ii)=>{
+            const disabled = locked || it.tier > player.level; // Simple check
+            h += `<div class="card r-${typeof it.tier === 'number' ? Math.min(6,it.tier) : 'hell'}"
+                    ${disabled ? 'style="opacity:0.35;filter:grayscale(70%)"' : `onclick="buy(${i},${ii})"`}
+                    onmouseenter="showTooltip(this, ${ii}, 'trader', ${i})"
+                    onmouseleave="hideTooltip()">
+                    <small>${it.name}</small><br>
+                    <span style="color:var(--gold)">${it.val} G</span>
+                  </div>`;
+        });
+        h+=`</div></div>`;
+        c.innerHTML += h;
+    });
+}
+
+
+
+
+function xpToNextForLevel(level) {
+    const obj = DB_LEVELS.find(l => l.level === level);
+    if(obj) return obj.xpToNext;
+    if(level >= 11) return INFINITE_LEVEL_XP;
+    return INFINITE_LEVEL_XP;
+}
+
+
+function awardXP(amount, reason) {
+    if(!amount || amount <= 0) return;
+    player.xp = (player.xp || 0) + amount;
+
+
+    while(true) {
+        const currentLevel = player.level || 1;
+        const xpNeeded = xpToNextForLevel(currentLevel);
+       
+        if(player.xp < xpNeeded) break;
+
+
+        player.xp -= xpNeeded;
+        player.level = currentLevel + 1;
+       
+        showMsg(`LEVEL UP! ${player.level}`, "var(--gold)", 1200);
+        const nextObj = DB_LEVELS.find(l=>l.level === player.level);
+        if(nextObj && nextObj.msg) {
+            showModal(`LEVEL ${player.level}`, `<div style="color:#ccc">${nextObj.msg}</div>`);
+            document.getElementById('modal-act').innerHTML = `<button class="modal-btn" onclick="closeModal()">CONTINUE</button>`;
+        }
+    }
+
+
+    renderPlayer();
+    updateHUD();
+    save();
+    if(reason) console.log(reason);
+}
+
+
+function renderPlayer() {
+    const next = DB_LEVELS.find(l=>l.level === player.level+1) || { level: player.level+1, xpToNext: xpToNextForLevel(player.level+1), msg: null, unlockTier: null };
+    const list = document.getElementById('next-level-rewards');
+    list.innerHTML = '';
+   
+    if(next) {
+        list.innerHTML += `<div>Unlocks Trading Tier: ${next.unlockTier ?? '—'}</div>`;
+        list.innerHTML += `<div>XP Required: ${next.xpToNext}</div>`;
+    }
+
+
+    document.getElementById('stat-deepest').innerText = player.deepestFloor;
+    document.getElementById('stat-kills').innerText = player.totalKills;
+    document.getElementById('stat-extracts').innerText = player.totalExtracts;
+    document.getElementById('stat-deaths').innerText = player.totalDeaths;
+    if(player.furthestHellRoom > 0) {
+        document.getElementById('stat-hell').style.display = 'block';
+        document.getElementById('stat-hellroom').innerText = player.furthestHellRoom;
+    } else {
+        document.getElementById('stat-hell').style.display = 'none';
+    }
+
+
+    const big = document.getElementById('player-lvl-big');
+    big.innerText = player.level;
+    if(player.level >= 10) big.style.color = 'var(--gold)'; else big.style.color = '#fff';
+
+
+    renderTrader();
+    document.getElementById('hud-gold').innerText = player.gold;
+    document.getElementById('hud-lvl').innerText = player.level;
+    const xpNeeded = xpToNextForLevel(player.level || 1);
+    document.getElementById('player-xp-text').innerText = `${player.xp} / ${xpNeeded} XP`;
+    document.getElementById('hud-xp-label').innerText = `${player.xp} / ${xpNeeded} XP`;
+    const pct = Math.min(1, (player.xp || 0) / xpNeeded);
+    document.getElementById('hud-xp-fill').style.width = (pct*100)+'%';
+    const circle = document.getElementById('xp-circle');
+    if(circle) {
+        const circumference = 2*Math.PI*45;
+        const dash = circumference * pct;
+        circle.setAttribute('stroke-dasharray', `${dash} ${circumference - dash}`);
+    }
+}
+
+
+function switchScreen(screenName) {
+    const screens = document.querySelectorAll('.screen');
+    screens.forEach(s => {
+        s.style.display = 'none';
+        s.classList.remove('active');
+    });
+
+
+    const target = document.getElementById('screen-' + screenName);
+    if(target) {
+        target.style.display = (screenName === 'hub') ? 'block' : 'block';
+        target.classList.add('active');
+    }
+
+
+    const navBtns = document.querySelectorAll('.nav-btn');
+    navBtns.forEach(btn => {
+        btn.classList.remove('active');
+        if(btn.getAttribute('onclick').includes(screenName)) {
+            btn.classList.add('active');
+        }
+    });
+
+    if (screenName === 'hub') {
+        renderHub();
+    }
+}
+
+
+function renderHub() {
+    hideTooltip(); document.getElementById('hud-gold').innerText = player.gold;
+    const g = document.getElementById('stash-grid'); g.innerHTML = '';
+
+
+    player.stash.forEach((it,i)=>{
+        const d = document.createElement('div'); d.className = `card r-${typeof it.tier === 'number' ? Math.min(6,it.tier) : 'hell'}`;
+        const sellBtn = document.createElement('button'); sellBtn.className = 'btn-sell';
+        sellBtn.innerText = '$';
+        sellBtn.style.position='absolute'; sellBtn.style.top='5px'; sellBtn.style.right='5px';
+        sellBtn.onclick = (e) => { e.stopPropagation(); sellItem(i); };
+        const titleColor = it.purchased ? 'color:var(--gold);' : '';
+        d.innerHTML += `<div class="card-top"><span class="card-name" style="${titleColor}">${it.name}</span></div><span class="card-type">${it.type}</span>`;
+        d.appendChild(sellBtn);
+        d.onclick = () => equip(i); d.onmouseenter = () => showTooltip(d, i, 'stash'); d.onmouseleave = () => hideTooltip();
+        g.appendChild(d);
+    });
+    updateSlots(); save();
+}
+
+
+function sellItem(i) {
+    hideTooltip();
+    const item = player.stash[i];
+    if(!item) return;
+    const price = Math.ceil(item.val * 0.8);
+    player.gold += price;
+    player.stash.splice(i, 1);
+    renderHub();
+    awardXP(Math.max(1, Math.floor(price * 0.01)), `Sold item -> +${Math.max(1, Math.floor(price * 0.01))} XP`);
+    save();
+    renderHub();
+    document.getElementById('hud-gold').innerText = player.gold;
+}
+
+
+function showTooltip(el, idx, source, traderIdx) {
+    let item;
+    if(source === 'stash') item = player.stash[idx];
+    else item = (stocks[traderIdx] || [])[idx];
+    if(!item) return;
+    const tt = document.getElementById('tooltip');
+    document.getElementById('tt-title').innerText = item.name;
+    document.getElementById('tt-title').style.color = item.purchased ? 'var(--gold)' : ((item.tier === 10) ? 'var(--r-hell)' : `var(--r${Math.min(4, item.tier)})`);
+    document.getElementById('tt-meta').innerText = `Tier ${item.tier} | ${item.type}`;
+    document.getElementById('tt-desc').innerText = item.desc;
+    document.getElementById('tt-gold-note').style.display = item.purchased ? 'block' : 'none';
+    tt.style.display = 'block';
+
+
+document.addEventListener('mousemove', function(e) {
+  tt.style.left = e.pageX + 'px';
+  tt.style.top = e.pageY + 'px';
+});
+}
+function hideTooltip() { document.getElementById('tooltip').style.display = 'none'; }
+function equip(i) {
+    hideTooltip();
+    const it = player.stash[i];
+    if(!it) return;
+    let s = it.type;
+    if(player.loadout[s]) {
+        player.stash.push(cloneSerializable(player.loadout[s]));
+    }
+    player.loadout[s] = cloneSerializable(it);
+    player.stash.splice(i,1);
+    renderHub();
+    save();
+}
+function unequip(s) {
+    if(player.loadout[s]) {
+    // Check if it has a UID, if not (old save item), give it one
+    let itemToStash = cloneSerializable(player.loadout[s]);
+    if(!itemToStash.uid) itemToStash.uid = generateUID();
+    
+    player.stash.push(itemToStash);
+    player.loadout[s] = null;
+        renderHub();
+        save();
+    }
+}
+function updateSlots() {
+    ['weapon','armor','spell','shield'].forEach(s=>{
+        const e = document.getElementById('slot-'+s);
+        if(player.loadout[s]) { e.innerText = player.loadout[s].name; e.classList.add('filled'); }
+        else { e.innerText = s.toUpperCase(); e.classList.remove('filled'); }
+    });
+}
+
+
+function travel() {
+    document.getElementById('controls').innerHTML = '';
+    const ov = document.getElementById('ov-travel'); const bar = document.getElementById('travel-fill');
+    ov.style.display = 'flex'; bar.style.width = '0%';
+    setTimeout(() => { bar.style.width = '100%'; }, 50);
+    setTimeout(() => { ov.style.display = 'none'; loadRoom(); }, CFG.travelTime);
+}
+
+
+function loadRoom() {
+    game.room++;
+    game.enemy = null;
+    updateHUD();
+    if(player.loadout.shield) {
+        game.shieldHp = player.loadout.shield.hp;
+    } else {
+        game.shieldHp = 0;
+    }
+    const th = THEMES[Math.min(game.floor, 10)];
+    document.documentElement.style.setProperty('--theme', th.col);
+    document.getElementById('floor-txt').innerText = `${th.name} - FLOOR ${game.floor+1}`;
+    document.getElementById('narrative').style.display = 'block';
+    document.getElementById('combat-ui').style.display = 'none';
+    const c = document.getElementById('controls'); c.innerHTML = '';
+
+
+    const isHell = game.floor >= 10;
+    const isBoss = !isHell && game.room === 8;
+
+
+    if(isHell) {
+        setRoom("HELL", "Endless fire.");
+        addBtn("FIGHT", "Demon", ()=>spawnEnemy(false));
+        addBtn("EXTRACT", "Escape", extract);
+    } else if(isBoss) {
+        setRoom("BOSS", "The guardian.");
+        spawnEnemy(true);
+    } else {
+        if(game.room === 1) {
+            setRoom("ENTRANCE", "Begin.");
+            addBtn("FORWARD", "Go", travel);
+        } else {
+            if(Math.random()>0.25) {
+                setRoom("ENEMY", "Blocking path.");
+                spawnEnemy(false);
+            } else {
+                setRoom("EMPTY", "Quiet.");
+                addBtn("LEFT", "Dark path", travel);
+                addBtn("RIGHT", "Wet path", travel);
+            }
+        }
+    }
+}
+function setRoom(t,d) { document.getElementById('room-title').innerText=t; document.getElementById('room-desc').innerText=d; }
+function addBtn(t,s,cb) {
+    const b = document.createElement('div'); b.className='btn-act';
+    b.innerHTML=`<strong>${t}</strong><small>${s}</small>`; b.onclick=cb;
+    document.getElementById('controls').appendChild(b);
+}
+
+
+let selectedFloorIndex = 0;
+
+
+function startRun() {
+    if (player.runCount === 0) {
+        deployToFloor(0);
+    } else {
+        openDeploy();
+    }
+}
+
+
+function openDeploy() {
+    const modal = document.getElementById('ov-deploy');
+    modal.style.display = 'flex';
+   
+    const container = document.getElementById('deploy-buttons');
+    container.innerHTML = '';
+
+
+    for (let f = 0; f < FLOOR_REQUIREMENTS.length; f++) {
+        const floorNum = f + 1;
+        const reqLevel = FLOOR_REQUIREMENTS[f];
+       
+        const btn = document.createElement('div');
+        btn.className = 'floor-btn';
+        btn.id = `floor-btn-${f}`;
+
+
+        Object.assign(btn.style, {
+            width: '180px', margin: '6px', padding: '10px',
+            background: '#111', border: '1px solid #333',
+            textAlign: 'center', cursor: 'pointer', position: 'relative',
+            transition: '0.2s'
+        });
+
+
+        const themeName = (typeof THEMES !== 'undefined' && THEMES[f]) ? THEMES[f].name : "Zone " + floorNum;
+
+
+        btn.innerHTML = `
+            <strong style="display:block; color:var(--gold)">FLOOR ${floorNum}</strong>
+            <small style="color:#888">${themeName}</small>
+            <div style="font-size:0.8em; margin-top:5px; color:#666">Req: Lv ${reqLevel}</div>
+        `;
+
+
+        if (player.level < reqLevel) {
+            btn.style.opacity = '0.4';
+            btn.style.filter = 'grayscale(100%)';
+            btn.onclick = () => { alert(`Reach Level ${reqLevel} to unlock.`); };
+        } else {
+            btn.style.borderColor = '#554400';
+           
+            btn.onmouseover = function() {
+                if(selectedFloorIndex !== f) this.style.borderColor = 'var(--gold)';
+                this.style.background='#222';
+            };
+            btn.onmouseout = function() {
+                if(selectedFloorIndex !== f) this.style.borderColor = '#554400';
+                this.style.background='#111';
+            };
+
+
+            btn.onclick = () => { selectFloor(f); };
+        }
+       
+        container.appendChild(btn);
+    }
+
+
+    const actContainer = document.getElementById('deploy-act');
+    actContainer.innerHTML = `
+        <button class="modal-btn" onclick="closeDeploy()">CANCEL</button>
+        <button class="modal-btn" onclick="confirmDeploy()" id="deploy-buttons">DEPLOY</button>
+    `;
+
+
+    document.getElementById('deploy-note').innerText = `Select a floor. Requirements are based on your current Fighter Level.`;
+
+
+    if (selectedFloorIndex < FLOOR_REQUIREMENTS.length && player.level >= FLOOR_REQUIREMENTS[selectedFloorIndex]) {
+        selectFloor(selectedFloorIndex);
+    } else {
+        selectFloor(0);
+    }
+}
+
+
+function selectFloor(index) {
+    selectedFloorIndex = index;
+
+
+    const allBtns = document.querySelectorAll('.floor-btn');
+    allBtns.forEach(b => {
+        b.classList.remove('selected');
+        b.style.borderColor = '#554400';
+    });
+
+
+    const target = document.getElementById(`floor-btn-${index}`);
+    if (target) {
+        target.classList.add('selected');
+    }
+}
+
+
+function confirmDeploy() {
+    deployToFloor(selectedFloorIndex);
+}
+
+
+function closeDeploy() {
+    document.getElementById('ov-deploy').style.display = 'none';
+}
+function deployToFloor(floorIndex) {
+    closeDeploy();
+    if (typeof game !== 'undefined') {
+        game.floor = floorIndex;
+        game.room = 0;
+    }
+    if (typeof player !== 'undefined') player.runCount++;
+
+
+    if (typeof player !== 'undefined' && player.stats) {
+        player.stats.hp = player.stats.maxHp;
+       
+        player.stats.mana = player.stats.maxMana || player.stats.maxMp || 20;
+       
+        if (typeof updateHUD === 'function') {
+            updateHUD();
+        } else {
+            document.getElementById('bar-hp').style.width = '100%';
+            document.getElementById('bar-mp').style.width = '100%';
+        }
+    }
+
+
+    const travelOverlay = document.getElementById('ov-travel');
+    if (travelOverlay) {
+        travelOverlay.style.display = 'flex';
+        const bar = document.getElementById('travel-fill');
+        if(bar) {
+            bar.style.width = '0%';
+            setTimeout(() => { bar.style.width = '100%'; }, 50);
+        }
+    }
+
+
+    player.inRun = true;
+    save();
+
+
+    setTimeout(() => {
+        if (travelOverlay) travelOverlay.style.display = 'none';
+
+
+   
+        const nav = document.getElementById('nav-bar') || document.querySelector('.nav');
+        if (nav) nav.style.display = 'none';
+
+
+        document.querySelectorAll('.screen').forEach(el => {
+            el.style.display = 'none';
+            el.classList.remove('active');
+        });
+
+
+        const gameScreen = document.getElementById('screen-game');
+        if (gameScreen) {
+            gameScreen.style.display = 'block';
+            gameScreen.classList.add('active');
+        }
+
+
+        if (typeof loadRoom === 'function') loadRoom();
+
+
+    }, 600);
+}
+function spawnEnemy(isBoss) {
+    const tier = Math.min(10, game.floor);
+   
+    const pool = DB_ENEMIES.filter(e => e.tier === tier && (isBoss ? e.boss : !e.boss));
+    const tpl = pool[Math.floor(Math.random() * pool.length)] || DB_ENEMIES[0];
+   
+    let calculatedHP = Math.floor(30 * Math.pow(1.5, game.floor - 1));
+   
+    if (isBoss) calculatedHP *= 2;
+   
+    const roomScale = 1 + (game.room * 0.05);
+    calculatedHP = Math.floor(calculatedHP * roomScale);
+
+
+    game.enemy = {
+        ...tpl,
+        maxHp: calculatedHP,
+        hp: calculatedHP
+    };
+
+
+    pickEnemyPattern();
+    document.getElementById('narrative').style.display = 'none';
+    document.getElementById('combat-ui').style.display = 'flex';
+    document.getElementById('enemy-name').innerText = game.enemy.name;
+    document.getElementById('enemy-icon').innerText = game.enemy.icon;
+    updateEnemyHP();
+    renderActions();
+}
+function pickEnemyPattern() {
+    const pats = game.enemy.patterns;
+    game.currentPattern = pats[Math.floor(Math.random() * pats.length)];
+    document.getElementById('enemy-pat').innerText = game.currentPattern.toUpperCase();
+}
+function renderActions() {
+    document.getElementById('canvas-box').style.display = 'none';
+    const c = document.getElementById('controls'); c.innerHTML = '';
+
+
+    const healBtn = document.createElement('div');
+    healBtn.className = 'btn-act btn-heal';
+    healBtn.innerHTML = `<strong>HEAL TOOL</strong><small>Cost 10% MP -> Heal 10% HP</small>`;
+    healBtn.onclick = useHealTool;
+    c.appendChild(healBtn);
+    const w = player.loadout.weapon;
+    addBtn(`ATTACK (${w.name})`, `Seq. ${w.dmg} DMG`, ()=>startQTE(w.dmg));
+    ['spell'].forEach(s=>{
+        const sp = player.loadout[s];
+        if(sp) addBtn(`CAST ${sp.name}`, `${sp.dmg} DMG (${sp.cost} MP)`, ()=>startQTE(sp.dmg, sp.cost));
+    });
+}
+function useHealTool() {
+    const cost = 10;
+    if(player.stats.mana >= cost) {
+        player.stats.mana -= cost;
+        const heal = 10;
+        player.stats.hp = Math.min(player.stats.maxHp, player.stats.hp + heal);
+        updateHUD();
+        showMsg("HEALED", "var(--mp)");
+    } else alert("Not enough Mana");
+}
+
+
+let qte = {active:false, seq:[], idx:0, val:0, cost:0, timerInt:null};
+function startQTE(val, cost=0) {
+    if(cost > 0 && player.stats.mana < cost) return alert("No MP");
+    player.stats.mana -= cost; updateHUD();
+    qte = {active:true, seq:[], idx:0, val:val, cost:cost};
+    const ch = ['W','A','S','D'];
+    for(let i=0; i<8; i++) qte.seq.push(ch[Math.floor(Math.random()*4)]);
+    document.getElementById('ov-qte').style.display='flex';
+    const c = document.getElementById('qte-keys'); c.innerHTML='';
+    qte.seq.forEach(k=>{ const d=document.createElement('div'); d.className='key-box'; d.innerText=k; c.appendChild(d); });
+}
+function checkQTE(k) {
+    const els = document.querySelectorAll('.key-box');
+    if(!qte.active) return;
+    if(k === qte.seq[qte.idx].toLowerCase()) { els[qte.idx].classList.add('key-active'); qte.idx++; if(qte.idx===8) endQTE(true); }
+    else endQTE(false);
+}
+function endQTE(success) {
+    clearInterval(qte.timerInt); qte.active=false;
+    document.getElementById('ov-qte').style.display='none';
+    if(success) {
+        game.enemy.hp -= qte.val; updateEnemyHP();
+        if(game.enemy.hp <= 0) { game.enemy.hp = 0; updateEnemyHP(); win(); } else startEnemyTurn();
+    } else showMsg("ATTACK FAILED", "var(--hp)", 1000, startEnemyTurn);
+}
+
+
+let cvs, ctx, dodgeInt, p={x:300,y:175,vx:0,vy:0}, bullets=[], canJump=true, locked=false, lockTimer=0;
+
+
+function startEnemyTurn() {
+    pickEnemyPattern();
+    document.getElementById('ov-count').style.display='flex';
+    let c = 3; document.getElementById('count-num').innerText = c;
+    const int = setInterval(()=>{
+        c--; if(c>0) document.getElementById('count-num').innerText=c;
+        else { clearInterval(int); document.getElementById('ov-count').style.display='none'; runDodge(); }
+    }, 1000);
+}
+function runDodge() {
+    document.getElementById('controls').innerHTML = '';
+    document.getElementById('canvas-box').style.display = 'block';
+    cvs = document.getElementById('gameCanvas'); ctx = cvs.getContext('2d');
+    bullets = [];
+    
+    // Difficulty logic
+    let diff = THEMES[Math.min(game.floor, 10)].diff;
+    if(game.enemy.boss) diff *= 1.5;
+
+    // Reset Player Position for Dodge
+    p.x = 300; p.y = 175; p.vy = 0; p.vx = 0; locked = false; lockTimer = 0;
+    let startTime = Date.now();
+
+    // --- GAME LOOP STARTS HERE ---
+    dodgeInt = setInterval(()=>{
+        let elapsed = Date.now() - startTime;
+        let remaining = Math.max(0, 10 - (elapsed / 1000));
+
+        // 1. Clear Screen & Draw Timer
+        ctx.fillStyle='#000'; ctx.fillRect(0,0,600,350);
+        ctx.font = "20px Courier New"; ctx.fillStyle = "#444"; ctx.textAlign = "center";
+        ctx.fillText(remaining.toFixed(1) + "s", 300, 30);
+
+        // 2. Player Physics
+        p.vy += 0.25;
+
+        if(!locked) {
+            if(keys.a) p.x -= 5;
+            if(keys.d) p.x += 5;
+        } else {
+            p.x += p.vx;
+            p.vx *= 0.9;
+            lockTimer--;
+            if(lockTimer <= 0) locked = false;
+        }
+
+        if((keys.w || keys.space) && canJump) {
+            canJump = false;
+            if(p.x <= 0) {
+                p.vy = -9; p.vx = 10; locked = true; lockTimer = 20;
+            } else if(p.x >= 584) {
+                p.vy = -9; p.vx = -10; locked = true; lockTimer = 20;
+            } else if (p.y <= 2000){
+                p.vy = -7;
+            }
+        }
+        if(!keys.w && !keys.space) canJump = true;
+
+        p.y += p.vy;
+
+        // Boundaries
+        if(p.x < 0) p.x = 0;
+        if(p.x > 584) p.x = 584;
+        if(p.y > 334) { p.y = 334; p.vy = 0; }
+        if(p.y < 0) { p.y = 0; p.vy = Math.abs(p.vy) * 0.5; }
+
+        // 3. Draw Player
+        ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--theme');
+        ctx.fillRect(p.x, p.y, 16, 16);
+        
+        // 4. Spawn Bullets
+        updatePattern(diff);
+
+        // --- SHIELD RENDER ---
+        if(player.loadout.shield && game.shieldHp > 0) {
+            // Set color to match the floor theme
+            ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--theme');
+            
+            const d = player.loadout.shield.dir;
+            
+            // Draw shield relative to 'p' (player)
+            if(d === 'up') ctx.fillRect(p.x - 4, p.y - 10, 24, 6);
+            else if(d === 'left') ctx.fillRect(p.x - 10, p.y - 4, 6, 24);
+            else if(d === 'right') ctx.fillRect(p.x + 24, p.y - 4, 6, 24);
+        }
+
+        // --- BULLETS & COLLISION ---
+        ctx.fillStyle = '#fff'; // Bullet Color
+
+        for(let i=0; i<bullets.length; i++) {
+            let b = bullets[i];
+            b.x += b.vx;
+            b.y += b.vy;
+            ctx.fillRect(b.x, b.y, 6, 6);
+
+            // A. SHIELD COLLISION
+            let blocked = false;
+            if(player.loadout.shield && game.shieldHp > 0) {
+                const d = player.loadout.shield.dir;
+                
+                // Define Hitbox for shield
+                let sx, sy, sw, sh;
+                if(d === 'up') { sx = p.x - 4; sy = p.y - 10; sw = 24; sh = 6; }
+                else if(d === 'left') { sx = p.x - 10; sy = p.y - 4; sw = 6; sh = 24; }
+                else if(d === 'right') { sx = p.x + 24; sy = p.y - 4; sw = 6; sh = 24; }
+                
+                // Check intersection
+                if (b.x < sx + sw && b.x + 6 > sx && b.y < sy + sh && b.y + 6 > sy) {
+                    blocked = true;
+                    game.shieldHp--; // Reduce Shield HP
+                    bullets.splice(i, 1);
+                    i--;
+                    continue; // Bullet destroyed
+                }
+            }
+
+            // B. PLAYER COLLISION
+            if(!blocked && b.x < p.x + 16 && b.x + 6 > p.x && b.y < p.y + 16 && b.y + 6 > p.y) {
+                
+                // Damage Calculation
+                let dmg = 10 + (game.floor * 10); 
+                if(player.loadout.armor) {
+                    dmg -= Math.floor(player.loadout.armor.def);
+                }
+                
+                // Minimum 1 damage
+                player.stats.hp -= Math.max(1, dmg);
+                
+                bullets.splice(i, 1);
+                i--;
+                updateHUD();
+                
+                // Flash Red
+                ctx.fillStyle = 'red';
+                ctx.fillRect(0, 0, 600, 350);
+            }
+        }
+        
+        // Stop if dead or time up
+        if(player.stats.hp <= 0) {
+            clearInterval(dodgeInt);
+            // trigger death logic (usually implied or handled elsewhere)
+            alert("You Died");
+            location.reload(); 
+        }
+        if(remaining <= 0) {
+            clearInterval(dodgeInt);
+            document.getElementById('canvas-box').style.display = 'none';
+            renderActions();
+        }
+
+    }, 20); // End of setInterval
+}
+
+// Ensure updatePattern is defined (it can be outside runDodge, but sticking it here is fine)
+function updatePattern(diff) {
+    const pat = game.currentPattern;
+    const spd = (3 + (game.floor*0.5)) * diff;
+    const rate = 0.05 * diff;
+    if(Math.random() < rate) {
+        let b = {x:0,y:0,vx:0,vy:0};
+        if(pat === 'rain') { b.x=Math.random()*600; b.y=0; b.vy=spd; }
+        else if(pat === 'dash') { b.x=600; b.y=Math.random()*350; b.vx=-spd*1.5; }
+        else if(pat === 'track') { let a = Math.atan2(p.y, p.x-300); b.x=300; b.y=0; b.vx=Math.cos(a)*spd; b.vy=Math.sin(a)*spd; }
+        else if(pat === 'nova') { b.x=300; b.y=175; let a=Math.random()*6.28; b.vx=Math.cos(a)*spd; b.vy=Math.sin(a)*spd; }
+        else if(pat === 'snake') { b.x=Math.random()*600; b.y=0; b.vy=spd; b.vx=Math.sin(Date.now()/100)*2; }
+        else { if(Math.random()>0.5) { b.x=Math.random()*600; b.y=0; b.vy=spd; } else { b.x=0; b.y=Math.random()*350; b.vx=spd; } }
+        bullets.push(b);
+    }
+}
+
+
+function win() {
+    document.getElementById('controls').innerHTML = '';
+ // 1. Calculate Gold
+   let base = 15;
+   let tierBonus = (game.enemy.tier || 0) * 5;
+   let rng = Math.floor(Math.random() * 11);
+   let goldAmt = base + tierBonus + rng;
+  
+   player.gold += goldAmt;
+
+
+
+    let lootMsg = `<span class="loot-text">+${goldAmt} GOLD</span>`;
+
+
+    const tier = Math.min(10, game.floor);
+    const pool = DB_ITEMS.filter(i=>i.tier===tier);
+
+
+    if(pool.length) {
+        const item = pool[Math.floor(Math.random()*pool.length)];
+        player.stash.push(cloneSerializable(item));
+        lootMsg += `<span class="loot-text" style="color:var(--gold)">FOUND: ${item.name}</span>`;
+    }
+
+
+    const xpMod = game.enemy.xpMod || 5;
+    let earnedXP = Math.max(2, Math.floor(xpMod * (game.enemy.boss ? 2 : 1)));
+    earnedXP = Math.floor(earnedXP * (1 + (game.floor * 0.05)));
+    awardXP(earnedXP, `Enemy defeated: +${earnedXP} XP`);
+    lootMsg += `<span class="loot-text" style="color:#9ef">${earnedXP} XP</span>`;
+
+
+    player.totalKills = (player.totalKills || 0) + 1;
+    save();
+
+
+    showMsg(`VICTORY!`, "var(--gold)", 1000, ()=>{
+        showModal("LOOT", lootMsg);
+        document.getElementById('modal-act').innerHTML =
+           `<button class="modal-btn" onclick="${game.enemy.boss ? 'finishBoss()' : 'finishRoom()'}">CONTINUE</button>`;
+    });
+}
+
+
+
+
+function finishRoom() { closeModal(); setRoom("CLEARED", "Room Secured."); updateRoom(); player.stats.mana = Math.min(player.stats.maxMana, player.stats.mana + 5); updateHUD(); const c=document.getElementById('controls'); c.innerHTML=''; const h=document.createElement('div'); h.className='btn-act btn-heal'; h.innerHTML=`<strong>HEAL TOOL</strong><small>Cost 20% MP -> Heal 10% HP</small>`; h.onclick=useHealTool; c.appendChild(h); addBtn("CONTINUE", "Travel", travel); save(); }
+function finishBoss() {
+    closeModal();
+    setRoom("VICTORY", "Floor Conquered.");
+    updateRoom();
+    player.stats.mana = Math.min(player.stats.maxMana, player.stats.mana + 5);
+    updateHUD();
+
+    const c = document.getElementById('controls');
+    c.innerHTML = '';
+
+    const h = document.createElement('div');
+    h.className = 'btn-act btn-heal';
+    h.innerHTML = `<strong>HEAL TOOL</strong><small>Cost 20% MP -> Heal 10% HP</small>`;
+    h.onclick = useHealTool;
+    c.appendChild(h);
+
+    // --- FIX IS HERE ---
+    // Remove the parentheses after extract
+    addBtn("EXTRACT", "Leave", extract); 
+    addBtn("DESCEND", "Next Floor", () => {
+        descend();
+    });
+
+    save();
+}
+
+
+
+function descendWithDeploy() {
+    if(player.runs && player.runs > 0) openDeploy();
+    else descend();
+}
+
+
+function descend() {
+    game.floor++; game.room=0; travel();
+    if(game.floor+1 > player.deepestFloor) {
+        player.deepestFloor = game.floor+1;
+        save();
+    }
+}
+function extract() {
+    player.gold += game.goldRun;
+    refreshStocks();
+    player.totalExtracts = (player.totalExtracts || 0) + 1;
+    player.runs = (player.runs||0) + 1;
+    player.inRun = false;
+    save();
+    renderHub();
+}
+
+
+function die() {
+    player.loadout = { weapon: null, armor: null, spell: null, shield: null };
+    if(!player.stash.length) player.stash.push(cloneSerializable(DB_ITEMS[0]));
+    player.totalDeaths = (player.totalDeaths || 0) + 1;
+
+
+    showModal("YOU DIED", "LOADOUT LOST");
+    player.inRun = false;
+
+
+    const actContainer = document.getElementById('modal-act');
+    let timeLeft = 2.5;
+
+
+    const deathTimer = setInterval(() => {
+        actContainer.innerHTML = `<div style="font-size: 1.2em; font-weight: bold; color: #cc0000;">
+            Refreshing in ${timeLeft.toFixed(1)}s
+        </div>`;
+       
+        timeLeft -= 0.1;
+
+
+        if (timeLeft < 0) {
+            clearInterval(deathTimer);
+            save();
+            location.reload();
+        }
+    }, 100);
+}
+
+
+function showMsg(txt, col, dur, cb) {
+    document.getElementById('msg-txt').innerText = txt;
+    document.getElementById('msg-txt').style.color = col;
+    document.getElementById('ov-msg').style.display='flex';
+    setTimeout(()=>{ document.getElementById('ov-msg').style.display='none'; if(cb) cb(); }, dur || 900);
+}
+function showModal(t, m) { document.getElementById('modal-h').innerText=t; document.getElementById('modal-b').innerHTML=m; document.getElementById('modal').style.display='flex'; }
+function closeModal() { document.getElementById('modal').style.display='none'; }
+function updateHUD() {
+    document.getElementById('bar-hp').style.width =
+    (player.stats.hp/player.stats.maxHp)*100+'%';
+    document.getElementById('bar-mp').style.width =
+    (player.stats.mana/player.stats.maxMana)*100+'%';
+}
+function updateEnemyHP() { if(game.enemy && game.enemy.maxHp) document.getElementById('enemy-hp').style.width = (game.enemy.hp/game.enemy.maxHp)*100+'%'; }
+function updateRoom(n, max = 8) { document.getElementById("room-txt").textContent = `ROOM ${game.room}/8`; }
+
+
+const startButtons = document.getElementsByClassName('btn-start');
+for(let b of startButtons) {
+    b.onclick = function(){
+        if(player.runs && player.runs > 0) openDeploy();
+        else startRun();
+    };
+}
+
+
+document.addEventListener('keydown', function(e) {
+    const k = e.key.toLowerCase();
+
+
+    if (qte.active) {
+        checkQTE(k);
+        return;
+    }
+
+
+    if (k === 'w' || k === 'arrowup') keys.w = true;
+    if (k === 'a' || k === 'arrowleft') keys.a = true;
+    if (k === 's' || k === 'arrowdown') keys.s = true;
+    if (k === 'd' || k === 'arrowright') keys.d = true;
+    if (e.key === ' ') keys.space = true;
+});
+
+
+document.addEventListener('keyup', function(e) {
+    const k = e.key.toLowerCase();
+   
+    if (k === 'w' || k === 'arrowup') keys.w = false;
+    if (k === 'a' || k === 'arrowleft') keys.a = false;
+    if (k === 's' || k === 'arrowdown') keys.s = false;
+    if (k === 'd' || k === 'arrowright') keys.d = false;
+    if (e.key === ' ') keys.space = false;
+});
+
+
+document.addEventListener('visibilitychange', function() {
+    if (document.hidden && dodgeInt) {
+        clearInterval(dodgeInt);
+        dodgeInt = null;
+       
+        let dmg = 10 + (game.floor*2);
+        if(player.loadout.armor) dmg -= Math.floor(player.loadout.armor.def);
+        player.stats.hp -= Math.max(1, dmg);
+        updateHUD();
+       
+        if (player.stats.hp <= 0) {
+            die();
+        } else {
+            showMsg("TABBED OUT!", "var(--hp)", 1000, renderActions);
+        }
+    }
+});
+
+
+refreshStocks();
+renderPlayer();
+
+</script>
+
+<script>
+    window.CMG_SNAPSHOT_MANIFEST = {"title": "Into The Deep v1.4 (Jan 3, 2026)", "description": "The one surviving saved copy of Into The Deep, at version 1.4: a floor-by-floor extraction game with an inventory, traders, spells and shields - gold marks trader gear, and dying costs your loadout. Earlier versions are lost, but the release story survives: 1.0 and 1.2 both landed November 21, 1.3 on December 2, and 1.4 here on January 3.", "date": "1-3-26", "project": "Old Games"};
+</script>
+<script src="../../snapshot-sidebar.js" defer></script>
+</body>
+</html>

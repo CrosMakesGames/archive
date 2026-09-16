@@ -1,0 +1,604 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+ <meta charset="UTF-8">
+ <title>Bird Game 1</title>
+ <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+ <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+ <style>
+ :root {
+ --primary: #f1c40f;
+ --secondary: #2ecc71;
+ --danger: #e74c3c;
+ --accent: #3498db;
+ --bg: #050510;
+ --panel: #161625;
+ --ghost: #9b59b6;
+ }
+
+ * { box-sizing: border-box; user-select: none; -webkit-user-select: none; outline: none; }
+ body {
+ margin: 0; padding: 0;
+ background: var(--bg);
+ font-family: 'Press Start 2P', cursive;
+ overflow: hidden;
+ color: white;
+ }
+
+ #gameCanvas { display: block; width: 100vw; height: 100vh; background: #70c5ce; cursor: pointer; }
+
+ /* --- UI LAYER --- */
+ #ui-layer { position: absolute; inset: 0; pointer-events: none; z-index: 5; }
+ 
+ #hud {
+ padding: 20px;
+ display: flex;
+ justify-content: space-between;
+ text-shadow: 3px 3px 0 #000;
+ }
+
+ .hud-box { display: flex; flex-direction: column; gap: 8px; }
+ .big-text { font-size: 16px; color: var(--primary); display: flex; align-items: center; gap: 10px; }
+ .sub-text { font-size: 8px; color: #fff; text-transform: uppercase; letter-spacing: 1px;}
+
+ #rank-bar-bg {
+ width: 180px; height: 14px; background: rgba(0,0,0,0.6); border: 2px solid #fff;
+ margin-top: 5px; position: relative; overflow: hidden;
+ }
+ #rank-bar-fill { height: 100%; width: 0%; background: linear-gradient(90deg, #e67e22, #f1c40f); transition: width 0.3s; }
+
+ #ability-hud { 
+ margin-top: 5px; display: flex; align-items: center; gap: 8px; 
+ opacity: 0.3; transition: opacity 0.3s;
+ }
+ #ability-hud.ready { opacity: 1; color: var(--accent);}
+ @keyframes pulse { 0% { opacity: 0.7; } 50% { opacity: 1; } 100% { opacity: 0.7; } }
+
+ /* --- MENUS --- */
+ .menu-screen {
+ position: absolute; inset: 0; background: rgba(0, 0, 0, 0.9);
+ display: flex; flex-direction: column; align-items: center; justify-content: center;
+ z-index: 20; padding: 20px;
+ }
+ .hidden { display: none !important; }
+
+ .panel {
+ background: var(--panel); border: 4px solid #fff; padding: 20px;
+ box-shadow: 8px 8px 0 #000; width: 100%; max-width: 600px;
+ display: flex; flex-direction: column;
+ }
+
+ h1 { color: var(--primary); font-size: 22px; margin: 0 0 15px 0; text-align: center; text-shadow: 4px 4px 0 #000; }
+
+ .scroll-area { 
+ height: 320px; overflow-y: auto; background: rgba(0,0,0,0.4); 
+ padding: 10px; margin-bottom: 15px; border: 2px solid #444; 
+ }
+
+ /* --- CAROUSEL --- */
+ #carousel {
+ display: flex; align-items: center; justify-content: space-between;
+ background: #222; border: 3px solid #555; padding: 10px; margin-bottom: 20px; width: 100%;
+ }
+ #bird-info { text-align: center; flex: 1; }
+ .arrow-btn { 
+ background: var(--accent); color: white; border: 3px solid #000; 
+ font-family: inherit; cursor: pointer; padding: 12px; font-size: 16px;
+ }
+ .arrow-btn:active { transform: translateY(2px); }
+
+ /* --- UPGRADES --- */
+ .upgrade-item {
+ background: #252535; border: 2px solid #444; padding: 12px; margin-bottom: 10px;
+ display: flex; justify-content: space-between; align-items: center;
+ }
+ .upg-title { font-size: 9px; color: var(--primary); margin-bottom: 4px; }
+ .upg-desc { font-size: 7px; color: #aaa; line-height: 1.3; }
+ .upg-buy { 
+ background: var(--secondary); border: 2px solid #000; color: #fff; 
+ padding: 6px 10px; font-family: inherit; font-size: 8px; cursor: pointer;
+ }
+ .upg-buy:disabled { background: #444; cursor: not-allowed; border-color: #222; }
+
+ /* --- GALAXY RESEARCH --- */
+ .galaxy-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+ .node {
+ background: #111; border: 3px solid #333; padding: 12px;
+ text-align: center; cursor: pointer; transition: 0.2s;
+ }
+ .node.bought { border-color: var(--accent); background: #1a233a; }
+ .node-name { font-size: 14px; color: var(--primary); margin-bottom: 5px; }
+ .node-cost { font-size: 10px; color: var(--accent); margin-top: 5px; }
+
+ /* --- BUTTONS --- */
+ .btn-group { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; width: 100%; }
+ .big-btn {
+ background: var(--secondary); color: white; border: 4px solid #000;
+ padding: 12px; font-family: inherit; font-size: 10px; cursor: pointer;
+ box-shadow: 4px 4px 0 #000;
+ }
+ .big-btn:active { box-shadow: 0 0 0 #000; transform: translate(4px, 4px); }
+ .back-btn { background: #7f8c8d; }
+ .wipe-btn { background: #500; font-size:8px; padding:8px; margin-top:10px; border:2px solid #f00; color:#faa; }
+
+ /* --- ICONS --- */
+ .p-coin { display: inline-block; width: 14px; height: 14px; background: #2ecc71; border: 2px solid #000; vertical-align: middle; }
+ .b-book { display: inline-block; width: 14px; height: 14px; background: var(--accent); border: 2px solid #fff; vertical-align: middle; }
+
+ #flash { position: absolute; inset: 0; pointer-events: none; z-index: 100; }
+ .white-out { animation: fader 0.4s forwards; }
+ @keyframes fader { 0% { background: white; opacity: 1; } 100% { background: transparent; opacity: 0; } }
+ </style>
+</head>
+<body>
+
+<div id="flash"></div>
+<canvas id="gameCanvas"></canvas>
+
+<div id="ui-layer">
+ <div id="hud">
+ <div class="hud-box">
+ <div class="big-text"><span id="hud-pipes">0</span> <div class="p-coin"></div></div>
+ <div class="big-text" style="color:var(--accent);"><span id="hud-books">0</span> <div class="b-book"></div></div>
+ <div id="ability-hud">
+ <span id="ability-name">READY</span>
+ <span style="background:#fff; color:#000; padding:2px 4px; border-radius:2px; font-size:7px;">1</span>
+ </div>
+ </div>
+ <div class="hud-box" style="align-items: flex-end;">
+ <div class="sub-text" id="hud-rank">UNRANKED</div>
+ <div id="rank-bar-bg"><div id="rank-bar-fill"></div></div>
+ <div class="sub-text" id="hud-progress">0/50</div>
+ </div>
+ </div>
+</div>
+
+<div id="m-main" class="menu-screen">
+ <h1 style="font-size: 28px;">BIRD GAME 1</h1>
+ <div id="carousel">
+ <button class="arrow-btn" id="car-prev">◀</button>
+ <div id="bird-info">
+ <canvas id="bird-pre" width="70" height="70"></canvas>
+ <div id="bird-name" style="margin: 8px 0; color:var(--primary); font-size:12px;">FLAPPY</div>
+ <div id="bird-stat" style="font-size:7px; color:#aaa; line-height:1.4;">The original bird.</div>
+ </div>
+ <button class="arrow-btn" id="car-next">▶</button>
+ </div>
+ <div style="width:100%; max-width:480px; display:flex; flex-direction:column; gap:10px;">
+ <button id="btn-start" class="big-btn" style="font-size:16px; padding:20px;">LAUNCH FLIGHT</button>
+ <div class="btn-group">
+ <button id="btn-open-shop" class="big-btn" style="background:#9b59b6;">SHOP</button>
+ <button id="btn-open-res" class="big-btn" style="background:var(--accent);">RESEARCH</button>
+ <button id="btn-open-rebird" class="big-btn" style="background:var(--danger); grid-column: span 2;">RE-BIRD</button>
+ </div>
+ <button id="btn-wipe" class="wipe-btn">WIPE SAVE DATA</button>
+ </div>
+</div>
+
+<div id="m-shop" class="menu-screen hidden">
+ <div class="panel">
+ <h1>THE SHOP</h1>
+ <div class="sub-text" style="text-align:center; margin-bottom:10px;">Current: <span id="s-balance">0</span> <div class="p-coin"></div></div>
+ <div class="scroll-area" id="s-list"></div>
+ <button class="big-btn back-btn" onclick="showMenu('main')">BACK</button>
+ </div>
+</div>
+
+<div id="m-res" class="menu-screen hidden">
+ <div class="panel">
+ <h1>RESEARCH LAB</h1>
+ <div class="sub-text" style="text-align:center; margin-bottom:10px; color:var(--accent);">Books: <span id="r-books">0</span></div>
+ <div class="scroll-area">
+ <div class="galaxy-grid" id="r-grid"></div>
+ </div>
+ <div class="btn-group">
+ <button class="big-btn" style="background:var(--danger);" id="btn-respec">RESET RESEARCH</button>
+ <button class="big-btn back-btn" onclick="showMenu('main')">BACK</button>
+ </div>
+ </div>
+</div>
+
+<div id="m-rebird" class="menu-screen hidden">
+ <div class="panel" style="text-align:center;">
+ <h1>RE-BIRD</h1>
+ <div id="rebird-info" style="margin: 15px 0; line-height:1.6; font-size:10px;"></div>
+ <button class="big-btn" id="btn-do-rebird" style="background:var(--danger); width:100%;">RE-BIRD NOW</button>
+ <button class="big-btn back-btn" style="margin-top:10px; width:100%;" onclick="showMenu('main')">BACK</button>
+ </div>
+</div>
+
+<div id="m-confirm" class="menu-screen hidden" style="background: rgba(0,0,0,0.85);">
+ <div class="panel" style="max-width:400px; text-align:center; border-color:var(--danger);">
+ <h1 style="color:var(--danger);">WARNING</h1>
+ <p style="font-size:10px; line-height:1.8; margin-bottom:20px; color:#fff;">
+ Are you absolutely sure?<br>
+ This will delete <b>ALL</b> progress forever.<br>
+ <span style="color:#aaa;">(Pipes, Birds, Research, Upgrades)</span>
+ </p>
+ <div class="btn-group">
+ <button id="btn-confirm-yes" class="big-btn" style="background:var(--danger);">YES, WIPE</button>
+ <button id="btn-confirm-no" class="big-btn back-btn">CANCEL</button>
+ </div>
+ </div>
+</div>
+
+<div id="m-over" class="menu-screen hidden">
+ <h1>CRASHED</h1>
+ <div id="over-stats" style="text-align:center; margin-bottom:20px; font-size:10px; line-height:2;"></div>
+ <button class="big-btn" style="width:240px;" onclick="startGame()">RETRY</button>
+ <button class="big-btn back-btn" style="width:240px; margin-top:10px;" onclick="showMenu('main')">MENU</button>
+</div>
+
+<script>
+// --- CONSTANTS ---
+const BASE_GRAVITY = 0.45, BASE_SPEED = 3.8, JUMP = -8.5, P_WIDTH = 70;
+const RANKS = ["Unranked", "Bronze", "Silver", "Gold", "Platinum", "Diamond", "Master", "Grandmaster", "Legend", "Godly"];
+
+const BIRDS = [
+ { id: 0, name: "FLAPPY", color: "#f1c40f", beak: "#e67e22", stats: { speed: 1.0, grav: 1.0, mult: 1 }, ability: null, req: 0 },
+ { id: 1, name: "HEAVY", color: "#c0392b", beak: "#f1c40f", stats: { speed: 1.0, grav: 2.5, mult: 5 }, ability: null, req: 250 },
+ { id: 2, name: "SEAGULL", color: "#ecf0f1", beak: "#f39c12", stats: { speed: 2, grav: 0.7, mult: 2 }, ability: "GLIDE", req: 50 },
+ { id: 3, name: "THE GHOST", color: "#9b59b6", beak: "#fff", stats: { speed: 2.5, grav: 2.5, mult: 7 }, ability: "PHASE", req: 500 },
+ { id: 4, name: "IRON BIRD", color: "#7f8c8d", beak: "#333", stats: { speed: 0.8, grav: 3.0, mult: 7 }, ability: null, req: 1000 },
+ { id: 5, name: "PHOENIX", color: "#e67e22", beak: "#f1c40f", stats: { speed: 1.5, grav: 1.5, mult: 5.0 }, ability: "REBIRTH", req: 2500 },
+ { id: 6, name: "NEON RAVEN", color: "#00f7ff", beak: "#ff00ff", stats: { speed: 1.0, grav: 0.1, mult: 12.0 }, ability: "GLIDE", req: 10000 },
+ { id: 7, name: "CELESTIAL", color: "#ffffff", beak: "#f1c40f", stats: { speed: 15.0, grav: 10.0, mult: 50.0 }, ability: "PHASE", req: 100000 }
+];
+
+// --- STATE & SAVE ---
+let save = {
+ pipes: 0, lifetime: 0, books: 0, rebirds: 0, selected: 0, high: 0,
+ upgrades: { ptw: 0, gaps: 0, chains: 0, caffeine: 0, seeds: 0, luck: 0 },
+ res: { midas: false, muscles: false, steal: false, ego: false, convergence: false, chronos: false }
+};
+
+function load() {
+ const d = localStorage.getItem('BirdGalaxy_V3_Save');
+ if(d) {
+ const p = JSON.parse(d);
+ save = {...save, ...p};
+ save.upgrades = {...save.upgrades, ...p.upgrades};
+ save.res = {...save.res, ...p.res};
+ 
+ // --- FIX NAN GLITCH ---
+ if(isNaN(save.pipes)) save.pipes = 0;
+ if(isNaN(save.lifetime)) save.lifetime = 0;
+ }
+}
+function persist() { localStorage.setItem('BirdGalaxy_V3_Save', JSON.stringify(save)); }
+load();
+
+// --- ENGINE VARS ---
+let state = 'MENU', frames = 0, pipes = [], fx = [], text = [];
+let score = 0, rankIdx = 0, earnedRun = 0;
+let player = { x: 0, y: 0, vy: 0, rot: 0, shield: false, lives: 0, ghosting: false };
+let abReady = true, abActive = false, abTimer = 0;
+
+const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d');
+const flasher = document.getElementById('flash');
+
+// --- ART ---
+function drawBird(c, b, x, y, rot) {
+ c.save(); c.translate(x, y); c.rotate(rot);
+ if(player.ghosting) c.globalAlpha = 0.4;
+ 
+ // Aura/Shield
+ if(player.shield || (b.name === "PHOENIX" && player.lives > 0)) {
+ c.beginPath(); c.arc(0,0,32,0,Math.PI*2);
+ c.strokeStyle = b.name==="PHOENIX" ? "#e67e22" : "#3498db";
+ c.lineWidth = 3; c.setLineDash([5,5]); c.stroke(); c.setLineDash([]);
+ }
+
+ // Body
+ c.fillStyle = b.color; c.beginPath(); c.ellipse(0, 0, 22, 16, 0, 0, Math.PI*2); c.fill();
+ c.strokeStyle = "#000"; c.lineWidth = 2; c.stroke();
+
+ // Eye
+ c.fillStyle = "#fff"; c.beginPath(); c.arc(10, -8, 7, 0, Math.PI*2); c.fill(); c.stroke();
+ c.fillStyle = "#000"; c.beginPath(); c.arc(12, -8, 3, 0, Math.PI*2); c.fill();
+ 
+ // Beak
+ c.fillStyle = b.beak; c.beginPath(); c.moveTo(12, 0); c.lineTo(26, 6); c.lineTo(12, 12); c.fill(); c.stroke();
+ c.restore();
+}
+
+// --- CORE ---
+function createPipe(startX) {
+ let gap = 200 + (save.upgrades.gaps * 12);
+ let minH = 80, maxH = canvas.height - minH - gap;
+ let top = Math.floor(Math.random()*(maxH - minH + 1)) + minH;
+ let isGold = save.res.midas && Math.random() < (0.05 + save.upgrades.luck * 0.05);
+ pipes.push({ x: startX, top, gap, passed: false, isGold });
+}
+
+function startGame() {
+ const b = BIRDS[save.selected];
+ player.y = canvas.height/2; player.x = canvas.width * 0.25; player.vy = 0;
+ player.shield = save.res.muscles;
+ player.lives = (b.name === "PHOENIX") ? 1 : 0;
+ player.ghosting = false;
+ 
+ pipes = []; fx = []; text = [];
+ frames = 0; score = 0; rankIdx = 0; earnedRun = 0;
+ abActive = false; abTimer = 0; abReady = true;
+ 
+ // Instant first pipe
+ createPipe(canvas.width);
+ 
+ state = 'GAME';
+ document.querySelectorAll('.menu-screen').forEach(el => el.classList.add('hidden'));
+ updateHUD();
+ loop();
+}
+
+function loop() {
+ if(state !== 'GAME') return;
+ ctx.clearRect(0,0,canvas.width, canvas.height);
+ frames++;
+
+ const b = BIRDS[save.selected];
+ let spdMod = 1 + (save.upgrades.caffeine * 0.05);
+ let chronoMod = save.res.chronos ? (1 - (rankIdx * 0.05)) : 1;
+ 
+ let diff = {
+ speed: (BASE_SPEED + (rankIdx * 0.3)) * b.stats.speed * spdMod * chronoMod,
+ grav: (BASE_GRAVITY + (rankIdx * 0.02)) * b.stats.grav
+ };
+
+ // Ability Logic
+ if(abActive) {
+ if(b.name === "SEAGULL" || b.name === "NEON RAVEN") player.vy *= 0.82;
+ if(b.name === "THE GHOST" || b.name === "CELESTIAL") player.ghosting = true;
+ if(b.name === "IRON BIRD") player.vy = 16;
+ abTimer--;
+ if(abTimer <= 0) { abActive = false; player.ghosting = false; }
+ }
+
+ player.vy += diff.grav; player.y += player.vy;
+ player.rot = Math.min(Math.PI/3, Math.max(-Math.PI/4, player.vy * 0.1));
+ drawBird(ctx, b, player.x, player.y, player.rot);
+
+ // Pipe Spawning
+ if(frames % 110 === 0) {
+ createPipe(canvas.width);
+ }
+
+ for(let i=pipes.length-1; i>=0; i--) {
+ let p = pipes[i]; p.x -= diff.speed;
+ 
+ // Render
+ let g = ctx.createLinearGradient(p.x, 0, p.x + P_WIDTH, 0);
+ if(p.isGold) { g.addColorStop(0,'#d4af37'); g.addColorStop(1,'#f1c40f'); }
+ else { g.addColorStop(0,'#2ecc71'); g.addColorStop(1,'#27ae60'); }
+ ctx.fillStyle = g; ctx.strokeStyle = "#000"; ctx.lineWidth = 4;
+ ctx.fillRect(p.x, 0, P_WIDTH, p.top); ctx.strokeRect(p.x, 0, P_WIDTH, p.top);
+ ctx.fillRect(p.x, p.top+p.gap, P_WIDTH, canvas.height); ctx.strokeRect(p.x, p.top+p.gap, P_WIDTH, canvas.height);
+
+ // Collide
+ if(!player.ghosting && player.x + 18 > p.x && player.x - 18 < p.x + P_WIDTH) {
+ if(player.y - 14 < p.top || player.y + 14 > p.top + p.gap) {
+ if(abActive && b.name === "IRON BIRD") {
+ spawnFX(p.x + 35, player.y, "#fff", 12); pipes.splice(i, 1); continue;
+ }
+ if(player.shield) { player.shield = false; pipes.splice(i, 1); spawnFX(player.x, player.y, "#fff", 10); continue; }
+ if(player.lives > 0) { player.lives--; player.y = p.top + (p.gap/2); player.vy = 0; spawnFX(player.x, player.y, "#e67e22", 25); continue; }
+ gameOver();
+ }
+ }
+
+ // Score
+ if(!p.passed && player.x > p.x + P_WIDTH) {
+ p.passed = true; 
+ 
+ // Convergence: Rank Points
+ let points = save.res.convergence ? 2 : 1;
+ score += points;
+
+ // Chainsmoker: Full Multiplier (FIXED: NO RGB)
+ let m = b.stats.mult * (1 + save.upgrades.chains);
+ 
+ if(p.isGold) m *= 5;
+ if(save.res.steal && Math.random() < 0.02) m *= 10;
+ if(save.res.ego) m *= (1 + score * 0.015);
+ 
+ // Convergence: Currency
+ if(save.res.convergence) m *= 2;
+ 
+ let reward = Math.floor(Math.pow(2, rankIdx) * m);
+ save.pipes += reward; save.lifetime += reward; earnedRun += reward;
+ text.push({ x: player.x, y: player.y, txt: "+"+reward, life: 1, c: p.isGold?"#f1c40f":"#fff" });
+
+ let thresh = Math.floor(50 * Math.pow(2, rankIdx) * (1 - save.upgrades.ptw * 0.1));
+ // NaN Prevention
+ if(thresh < 1) thresh = 1;
+
+ if(score >= thresh && rankIdx < RANKS.length-1) {
+ rankIdx++; abReady = true;
+ flasher.classList.add('white-out'); setTimeout(()=>flasher.classList.remove('white-out'), 400);
+ }
+ updateHUD();
+ }
+ if(p.x < -100) pipes.splice(i, 1);
+ }
+
+ if(player.y < 0 || player.y > canvas.height) gameOver();
+ updateFX();
+ requestAnimationFrame(loop);
+ }
+
+// --- UI LOGIC ---
+function updateHUD() {
+ document.getElementById('hud-pipes').innerText = Math.floor(save.pipes);
+ document.getElementById('hud-books').innerText = save.books;
+ document.getElementById('hud-rank').innerText = RANKS[rankIdx];
+ let thresh = Math.floor(50 * Math.pow(2, rankIdx) * (1 - save.upgrades.ptw * 0.1));
+ // NaN Prevention for HUD
+ if(thresh < 1) thresh = 1;
+
+ document.getElementById('hud-progress').innerText = `${score}/${thresh}`;
+ document.getElementById('rank-bar-fill').style.width = Math.min(100, (score/thresh)*100) + "%";
+ 
+ let ab = BIRDS[save.selected].ability;
+ const ah = document.getElementById('ability-hud');
+ ah.style.display = ab ? 'flex' : 'none';
+ document.getElementById('ability-name').innerText = ab || "";
+ if(abReady) ah.classList.add('ready'); else ah.classList.remove('ready');
+}
+
+function renderShop() {
+ const l = document.getElementById('s-list'); l.innerHTML = "";
+ document.getElementById('s-balance').innerText = Math.floor(save.pipes);
+ const items = [
+ // --- PTW FIXED: Max level 9 to prevent division by zero (NaN) ---
+ { id: 'ptw', n: 'PAY TO WIN', d: 'Each rank takes less Rank Points to Rank Up.', b: 30, s: 1.6, m: 9 },
+ { id: 'gaps', n: 'WIDER GAPS', d: 'Increases the space between pipes.', b: 40, s: 2.1, m: 5 },
+ { id: 'chains', n: 'CHAINSMOKER', d: 'Adds one multiplier for all your Pipes, except Rank.', b: 350, s: 2.2, m: 12 },
+ { id: 'caffeine', n: 'CHICKINI COSINI', d: 'Increases speed. Only recommended if your Wider Gaps is a high level and you want to move faster.', b: 10, s: 1.7, m: 8 }
+ ];
+ if(save.res.midas) items.push({ id: 'luck', n: 'GOLD LUCK', d: '+5% Golden Pipes.', b: 100, s: 2.0, m: 5 });
+
+ items.forEach(it => {
+ let lvl = save.upgrades[it.id] || 0;
+ let cost = Math.floor(it.b * Math.pow(it.s, lvl));
+ let isMax = lvl >= it.m;
+ let div = document.createElement('div');
+ div.className = "upgrade-item";
+ div.innerHTML = `<div class="upg-info"><div class="upg-title">${it.n} (Lv ${lvl})</div><div class="upg-desc">${it.d}</div></div>
+ <button class="upg-buy" ${isMax || save.pipes < cost ? 'disabled' : ''}>${isMax ? 'MAX' : cost + ' P'}</button>`;
+ div.querySelector('button').onclick = () => { if(save.pipes>=cost){ save.pipes-=cost; save.upgrades[it.id]++; persist(); renderShop(); }};
+ l.appendChild(div);
+ });
+}
+
+function renderRes() {
+ const g = document.getElementById('r-grid'); g.innerHTML = "";
+ document.getElementById('r-books').innerText = save.books;
+ const nodes = [
+ { id: 'midas', n: 'MIDAS TOUCH', d: 'Enables Gold Pipes Starting at a 5% chance, but can be upgraded. Gold Pipes give a added five multiplier.' },
+ { id: 'muscles', n: 'BIRD STRENGTH', d: 'Protects your bird from death. One use per flight.' },
+ { id: 'steal', n: 'WINGS OF STEAL', d: 'Gives a 2% chance of a ten multiplier every pipe you pass through.' },
+ { id: 'ego', n: 'AERO EGO', d: 'Gain more pipes for how much rank points you have.' },
+ { id: 'convergence', n: 'EGG CONVERGENCE', d: 'Gain twice as much Pipes and Rank Points.' },
+ { id: 'chronos', n: 'CHRONOS FLAP', d: 'Suppress the dificulty increase from getting a higer rank.' }
+ ];
+ nodes.forEach(n => {
+ let b = save.res[n.id];
+ let div = document.createElement('div');
+ div.className = `node ${b ? 'bought' : ''}`;
+ div.innerHTML = `<div class="node-name">${n.n}</div><div class="node-desc" style="font-size:10px;">${n.d}</div><div class="node-cost">${b ? 'ACTIVE' : '1 BOOK'}</div>`;
+ div.onclick = () => { if(!b && save.books >= 1){ save.books--; save.res[n.id]=true; persist(); renderRes(); }};
+ g.appendChild(div);
+ });
+}
+
+// --- UTILS ---
+function jump() { if(state === 'GAME') player.vy = JUMP; }
+function cast() {
+ if(state !== 'GAME' || !abReady) return;
+ const b = BIRDS[save.selected];
+ if(b.name === "SEAGULL" || b.name === "NEON RAVEN") { abActive = true; abTimer = 240; abReady = false; }
+ if(b.name === "THE GHOST" || b.name === "CELESTIAL") { abActive = true; abTimer = 60; abReady = false; }
+ if(b.name === "IRON BIRD") { abActive = true; abTimer = 45; abReady = false; }
+}
+
+window.addEventListener('keydown', e => { if(e.code === 'Space') jump(); if(e.key === '1') cast(); });
+canvas.addEventListener('mousedown', jump);
+
+function gameOver() {
+ state = 'OVER'; if(score > save.high) save.high = score; persist();
+ document.getElementById('m-over').classList.remove('hidden');
+ document.getElementById('over-stats').innerHTML = `Score: ${score}<br>Best: ${save.high}<br>Earned: ${earnedRun} <div class="p-coin"></div><br><span style="color:#777">Lifetime: ${save.lifetime}</span>`;
+}
+
+let cIdx = save.selected;
+function updateCar() {
+ const pre = document.getElementById('bird-pre').getContext('2d');
+ pre.clearRect(0,0,70,70);
+ const b = BIRDS[cIdx];
+ const lock = (save.rebirds < b.req) && (save.lifetime < b.req);
+ 
+ if(lock) {
+ document.getElementById('bird-name').innerText = "LOCKED";
+ document.getElementById('bird-stat').innerText = `Reach ${b.req} pipes or Re-Bird.`;
+ } else {
+ drawBird(pre, b, 35, 35, 0);
+ document.getElementById('bird-name').innerText = b.name;
+ document.getElementById('bird-stat').innerText = `Multiplier: ${b.stats.mult}x\nAbility: ${b.ability || 'Passive Only'}`;
+ save.selected = cIdx; persist();
+ }
+}
+document.getElementById('car-prev').onclick = () => { cIdx = (cIdx - 1 + BIRDS.length) % BIRDS.length; updateCar(); };
+document.getElementById('car-next').onclick = () => { cIdx = (cIdx + 1) % BIRDS.length; updateCar(); };
+
+function showMenu(m) {
+ document.querySelectorAll('.menu-screen').forEach(el => el.classList.add('hidden'));
+ document.getElementById('m-'+m).classList.remove('hidden');
+ if(m==='shop') renderShop(); if(m==='res') renderRes(); if(m==='main') updateCar();
+ if(m==='rebird') {
+ const maxBooksRequired = 6; 
+ const currentCost = 500 * Math.pow(5, save.rebirds);
+ const can = save.pipes >= currentCost && save.rebirds < maxBooksRequired;
+ 
+ document.getElementById('rebird-info').innerHTML = `
+ <p>Re-Bird Level: ${save.rebirds} / ${maxBooksRequired}</p>
+ <p>Cost: ${currentCost} Pipes</p>
+ <p>Reward: 1 Bird Book</p>
+ <p style="font-size:14px; color:#aaa;">(Keeps Research & Books, Resets Shop & Pipes)</p>`;
+ 
+ document.getElementById('btn-do-rebird').disabled = !can;
+ document.getElementById('btn-do-rebird').onclick = () => {
+ // --- FIXED REBIRD LOGIC ---
+ save.pipes = 0; 
+ save.rebirds++; 
+ save.books++; 
+ save.upgrades = { ptw:0, gaps:0, chains:0, caffeine:0, seeds:0, luck:0 };
+ persist(); showMenu('main');
+ }
+ }
+}
+
+document.getElementById('btn-start').onclick = startGame;
+document.getElementById('btn-open-shop').onclick = () => showMenu('shop');
+document.getElementById('btn-open-res').onclick = () => showMenu('res');
+document.getElementById('btn-open-rebird').onclick = () => showMenu('rebird');
+document.getElementById('btn-respec').onclick = () => {
+ let ct = 0; Object.keys(save.res).forEach(k => { if(save.res[k]){ save.res[k]=false; ct++; }});
+ save.books += ct; persist(); renderRes();
+};
+
+// --- NEW MODAL LOGIC ---
+document.getElementById('btn-wipe').onclick = () => {
+ document.getElementById('m-confirm').classList.remove('hidden');
+};
+document.getElementById('btn-confirm-no').onclick = () => {
+ document.getElementById('m-confirm').classList.add('hidden');
+};
+document.getElementById('btn-confirm-yes').onclick = () => {
+ localStorage.removeItem('BirdGalaxy_V3_Save');
+ location.reload();
+};
+
+function spawnFX(x,y,c,n) { for(let i=0;i<n;i++) fx.push({x,y,vx:(Math.random()-0.5)*10,vy:(Math.random()-0.5)*10,life:1,c}); }
+function updateFX() {
+ for(let i=fx.length-1;i>=0;i--){
+ let p=fx[i]; p.x+=p.vx; p.y+=p.vy; p.life-=0.03; ctx.fillStyle=p.c; ctx.globalAlpha=p.life;
+ ctx.fillRect(p.x,p.y,4,4); if(p.life<=0) fx.splice(i,1);
+ }
+ for(let i=text.length-1;i>=0;i--){
+ let f=text[i]; f.y-=2; f.life-=0.02; ctx.fillStyle=f.c; ctx.globalAlpha=f.life;
+ ctx.font="10px 'Press Start 2P'"; ctx.fillText(f.txt, f.x, f.y); if(f.life<=0) text.splice(i,1);
+ }
+ ctx.globalAlpha=1;
+}
+
+window.onload = () => { canvas.width = window.innerWidth; canvas.height = window.innerHeight; showMenu('main'); };
+window.onresize = () => { canvas.width = window.innerWidth; canvas.height = window.innerHeight; };
+</script>
+
+<script>
+    window.CMG_SNAPSHOT_MANIFEST = {"title": "Bird Game v1.0 (Jan 3, 2026)", "description": "Bird Game 1, the smaller side project announced on the SSL page back in December: the classic flappy formula, but with eight birds to pick from - each with its own stats and abilities - plus a shop, a research lab and the re-bird currency loop. Released January 3 and never updated after 1.0.", "date": "1-3-26", "project": "Old Games"};
+</script>
+<script src="../../snapshot-sidebar.js" defer></script>
+</body>
+</html>
